@@ -1,7 +1,6 @@
 {
   "name": "docs-mcp-onboarding",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "description": "Audits the Pharos documentation as a first-time developer: eight onboarding steps, each checked against the corpus, with the evidence for every verdict.",
   "engines": {
@@ -23,5 +22,19 @@
     "developer-experience",
     "mcp"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "files": [
+    "src",
+    "scripts",
+    "functions",
+    "public",
+    "SKILL.md",
+    "README.md",
+    "LICENSE",
+    "wrangler.toml"
+  ],
+  "author": "arraya20",
+  "publishConfig": {
+    "access": "public"
+  }
 }
