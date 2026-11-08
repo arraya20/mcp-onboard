@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pharos docs — self-onboarding gap audit</title>
+<meta name="description" content="Every step a developer takes to self-onboard onto Pharos, checked against the documentation, with the evidence for each verdict.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="shell">
+
+  <header class="masthead">
+    <div>
+      <h1>Pharos docs — self-onboarding gap audit</h1>
+      <p class="subtitle">
+        An eight-step journey from "I want to build on Pharos" to "my contract is deployed and indexed".
+        Each step is checked against the published documentation, and every verdict carries its evidence.
+      </p>
+    </div>
+    <div class="pin">
+      <span class="pin-label">corpus</span>
+      <code id="corpusHash">…</code>
+      <code id="corpusMeta">…</code>
+    </div>
+  </header>
+
+  <dl class="summary" id="summary"></dl>
+  <p class="disclaimer" id="disclaimer"></p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-gaps" aria-controls="panel-gaps" aria-selected="true">Gaps<span class="count" id="countGaps"></span></button>
+    <button class="tab" role="tab" id="tab-journey" aria-controls="panel-journey" aria-selected="false">Full journey<span class="count" id="countJourney"></span></button>
+    <button class="tab" role="tab" id="tab-search" aria-controls="panel-search" aria-selected="false">Search the corpus</button>
+  </div>
+
+  <section class="panel" id="panel-gaps" role="tabpanel" aria-labelledby="tab-gaps">
+    <div class="actions">
+      <button class="btn" id="btnMd">Download report (.md)</button>
+      <button class="btn" id="btnJson">Download snapshot (.json)</button>
+    </div>
+    <div id="gapsBody"></div>
+  </section>
+
+  <section class="panel" id="panel-journey" role="tabpanel" aria-labelledby="tab-journey" hidden>
+    <div id="journeyBody"></div>
+  </section>
+
+  <section class="panel" id="panel-search" role="tabpanel" aria-labelledby="tab-search" hidden>
+    <form class="search-row" id="searchForm">
+      <input id="searchInput" type="search" placeholder="e.g. faucet, bundler, 688689, paymaster" autocomplete="off" spellcheck="false">
+      <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+    <p class="hint">Literal substring search across the pinned documentation snapshot. No stemming, no synonyms — the API says so itself rather than implying the topic is undocumented.</p>
+    <div id="searchBody"></div>
+  </section>
+
+  <section class="rubric">
+    <h2>How severity is decided</h2>
+    <dl id="rubricList"></dl>
+  </section>
+
+  <footer>
+    <span id="footerLeft"></span>
+    <span>Built for the Pharos Agent Arena · <a href="https://docs.pharos.xyz/llms.txt">docs source</a></span>
+  </footer>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

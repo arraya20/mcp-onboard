@@ -1,0 +1,26 @@
+{
+  "name": "docs-mcp-onboarding",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Audits the Pharos documentation as a first-time developer: eight onboarding steps, each checked against the corpus, with the evidence for every verdict.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:index": "node scripts/build-index.mjs",
+    "audit": "node scripts/audit.mjs",
+    "audit:live": "node scripts/audit.mjs --live",
+    "test": "node test/offline.test.mjs && node test/api.test.mjs",
+    "test:live": "node test/live.test.mjs",
+    "serve": "wrangler pages dev public --port 8793",
+    "deploy": "wrangler pages deploy public --project-name pharos-docs-gap-audit"
+  },
+  "keywords": [
+    "pharos",
+    "documentation",
+    "developer-experience",
+    "mcp"
+  ],
+  "license": "MIT"
+}
