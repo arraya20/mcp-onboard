@@ -51,8 +51,8 @@ function describeFetchError(err) {
   return code ? `${code}: ${msg}` : msg;
 }
 
-/** What names does the certificate on this host actually cover? */
-function peerCertNames(host) {
+/** What names does the certificate on this host actually cover, and until when? */
+function peerCert(host) {
   return new Promise((resolve) => {
     const socket = tlsConnect(
       { host, port: 443, servername: host, rejectUnauthorized: false, timeout: 12_000 },
@@ -63,15 +63,34 @@ function peerCertNames(host) {
           .map((s) => s.trim().replace(/^DNS:/, ""))
           .filter(Boolean);
         socket.end();
-        resolve({ names: san.length ? san : cert.subject?.CN ? [cert.subject.CN] : [], cn: cert.subject?.CN || null });
+        resolve({
+          names: san.length ? san : cert.subject?.CN ? [cert.subject.CN] : [],
+          cn: cert.subject?.CN || null,
+          validTo: cert.valid_to || null,
+          expired: cert.valid_to ? Date.parse(cert.valid_to) < Date.now() : null,
+        });
       },
     );
-    socket.on("error", () => resolve({ names: [], cn: null }));
+    socket.on("error", () => resolve({ names: [], cn: null, validTo: null, expired: null }));
     socket.on("timeout", () => {
       socket.destroy();
-      resolve({ names: [], cn: null });
+      resolve({ names: [], cn: null, validTo: null, expired: null });
     });
   });
+}
+
+/** Fetch a documented URL the way a browser would, following redirects. */
+async function fetchStatus(url) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { redirect: "follow", signal: ctrl.signal, headers: { "user-agent": "pharos-docs-gap-auditor/1.0" } });
+    return { url, ok: res.ok, status: res.status };
+  } catch (err) {
+    return { url, ok: false, error: describeFetchError(err) };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
@@ -83,7 +102,7 @@ async function checkTestnetHosts(hosts) {
   const results = [];
   for (const host of hosts) {
     const r = await rpcChainId(`https://${host}`);
-    const cert = r.ok ? { names: [], cn: null } : await peerCertNames(host);
+    const cert = r.ok ? { names: [], cn: null, validTo: null, expired: null } : await peerCert(host);
     results.push({ host, ...r, cert });
   }
   const working = results.filter((r) => r.ok);
@@ -99,6 +118,28 @@ async function checkTestnetHosts(hosts) {
     working: working.length ? working[0].host : null,
     workingChainId: working.length ? working[0].chainId : null,
     all: results,
+  };
+}
+
+/**
+ * The explorers referenced next to the testnet configs. A dead explorer is the
+ * same class of defect as a dead RPC: the config looks right and the developer
+ * concludes their own code is wrong.
+ */
+async function checkExplorers(urls) {
+  const results = [];
+  for (const url of urls) {
+    const host = new URL(url).host;
+    const status = await fetchStatus(url);
+    const cert = status.ok ? { names: [], cn: null, validTo: null, expired: null } : await peerCert(host);
+    results.push({ url, host, ...status, cert });
+  }
+  const broken = results.filter((r) => !r.ok);
+  return {
+    ok: broken.length === 0,
+    checked: results.length,
+    results,
+    broken: broken.map((r) => ({ host: r.host, url: r.url, error: r.error || `HTTP ${r.status}`, expired: r.cert.expired, validTo: r.cert.validTo })),
   };
 }
 
@@ -188,12 +229,13 @@ function parseSse(text) {
  * Take the whole snapshot. `documentedTools` comes from the corpus, so the
  * comparison is docs-against-server rather than a list typed into this file.
  */
-export async function collectLiveSnapshot({ documentedTools = [] } = {}) {
-  const [pacific, atlantic, testnet, mcp] = await Promise.all([
+export async function collectLiveSnapshot({ documentedTools = [], explorerUrls = [] } = {}) {
+  const [pacific, atlantic, testnet, mcp, explorers] = await Promise.all([
     rpcChainId("https://rpc.pharos.xyz"),
     rpcChainId("https://atlantic.dplabs-internal.com"),
     checkTestnetHosts(["testnet.dplabs-internal.com", "atlantic.dplabs-internal.com"]),
     mcpSnapshot(documentedTools),
+    explorerUrls.length ? checkExplorers(explorerUrls) : Promise.resolve({ ok: true, checked: 0, results: [], broken: [] }),
   ]);
 
   return {
@@ -203,5 +245,6 @@ export async function collectLiveSnapshot({ documentedTools = [] } = {}) {
     atlantic,
     atlanticTls: testnet,
     mcp,
+    explorers,
   };
 }

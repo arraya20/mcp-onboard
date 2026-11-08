@@ -14,6 +14,7 @@ import {
   extractHeadings,
   findInCorpus,
   countInCorpus,
+  matchContexts,
   snippetAround,
   isSoftNotFound,
   contentHash,
@@ -70,6 +71,22 @@ function fixture() {
       description: "",
       headings: ["Deploy a token"],
       plain: "chain_id 688688 rpc_endpoint https://testnet.dplabs-internal.com",
+    },
+    {
+      id: "developer-guide/foundry/write-your-first-dapp",
+      title: "Write your first dapp",
+      url: "https://docs.example/developer-guide/foundry/write-your-first-dapp",
+      description: "",
+      headings: ["Write your first dapp"],
+      plain: "cd contract forge install OpenZeppelin/openzeppelin-contracts --no-git forge script script/Counter.s.sol:CounterScript",
+    },
+    {
+      id: "developer-guide/foundry/write-your-first-token",
+      title: "Write your first token",
+      url: "https://docs.example/developer-guide/foundry/write-your-first-token",
+      description: "",
+      headings: ["Write your first token"],
+      plain: "For Atlantic Testnet forge verify-contract src/Token.sol:Token --chain-id 688688 --verifier blockscout --verifier-url https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer",
     },
     {
       id: "developer-guide/foundry",
@@ -188,10 +205,36 @@ await test("string patterns match literally, including regex metacharacters", ()
   assert.equal(countInCorpus(pages, "https://absent.example"), 0);
 });
 
+await test("matchContexts returns the text on both sides of every hit", () => {
+  const pages = [
+    { id: "a", title: "A", url: "u", description: "", headings: [], plain: "For Atlantic Testnet run --chain-id 424242 now" },
+  ];
+  const [hit] = matchContexts(pages, "424242", { window: 60 });
+  assert.equal(hit.index, pages[0].plain.indexOf("424242"));
+  assert.match(hit.before, /For Atlantic Testnet/);
+  assert.match(hit.after, /now$/);
+  // Case-folded like every other literal.
+  assert.equal(matchContexts(pages, "FOR ATLANTIC").length, 1);
+});
+
+await test("matchContexts accepts a RegExp and keeps per-match lengths", () => {
+  // A RegExp returns a bare RegExp from asMatcher, so the old implementation
+  // threw here. Lengths also have to come from the match, not a fixed needle.
+  const pages = [
+    { id: "a", title: "A", url: "u", description: "", headings: [], plain: "chain-id 11 and chain-id 222 end" },
+  ];
+  const hits = matchContexts(pages, /chain-id (\d+)/g, { window: 5 });
+  assert.equal(hits.length, 2);
+  assert.equal(hits[0].after, " and ");
+  assert.match(hits[0].before + "|" + hits[0].after, /\| and/);
+});
+
 await test("RegExp patterns are used as given, not escaped", () => {
   const pages = fixture().pages;
   assert.equal(countInCorpus(pages, /\b688689\b/), 1);
-  assert.equal(countInCorpus(pages, /\bforge\b/i), 0);
+  // The /i flag has to be honoured as given: same pattern, different case result.
+  assert.equal(countInCorpus(pages, /\bFORGE\b/), 0);
+  assert.equal(countInCorpus(pages, /\bforge\b/i), 3);
   assert.equal(countInCorpus(pages, /ethers\.js/), 1);
 });
 
@@ -259,7 +302,10 @@ await test("a live chainID that contradicts the docs is called out as the wrong 
   const r = runProbes(pages, {
     atlantic: { ok: true, chainId: 688689, url: "https://atlantic.dplabs-internal.com" },
   }).find((x) => x.id === "network-atlantic-chain-id");
-  assert.match(r.finding, /688689 is the correct value and 688688 is wrong/);
+  // The finding must state what the chain actually answered and tie the wrong
+  // value to the label it sits under, not just assert "688688 is wrong".
+  assert.match(r.finding, /eth_chainId with 0xa8231 = 688689, matching the reference page/);
+  assert.match(r.finding, /sit(?:s)? directly under the label "For Atlantic Testnet"/);
 });
 
 await test("an endpoint that answers with the published chain ID resolves", () => {
@@ -302,7 +348,11 @@ await test("a Foundry page with no forge is a gap, and the real subpages are nam
   const { pages } = fixture();
   const r = runProbes(pages, null).find((x) => x.id === "toolchain-foundry-landing");
   assert.equal(r.status, "GAP");
-  assert.match(r.finding, /zero mentions of forge/i);
+  assert.match(r.finding, /never uses the word forge/i);
+  // Every real subpage has to be named, otherwise the count and the list disagree.
+  const sub = pages.filter((p) => p.id.startsWith("developer-guide/foundry/") && /\bforge\b/i.test(p.plain));
+  assert.ok(sub.length >= 1, "fixture has no forge subpage to name");
+  assert.match(r.finding, new RegExp(`under ${sub.length} deeper page`));
 });
 
 await test("EntryPoint without bundler or paymaster is a gap", () => {
@@ -394,11 +444,13 @@ await test("results are ordered by journey step", () => {
 await test("markdown names every gap and its reproduce query", () => {
   const audit = buildAudit({ corpus: fixture(), live: null, generatedAt: null });
   const md = audit.markdown;
-  assert.match(md, /^# Pharos Docs MCP/);
+  assert.match(md, /^# Pharos documentation/);
+  // The old title re-asserted the premise the audit exists to refute.
+  assert.doesNotMatch(md.split("\n")[0], /Docs MCP/i);
   assert.match(md, /## Summary/);
   assert.match(md, /## Journey/);
   for (const g of audit.results.filter((r) => r.status === "GAP")) {
-    assert.ok(md.includes(g.title), `markdown is missing ${g.id}`);
+    assert.ok(md.includes(g.gapTitle || g.title), `markdown is missing ${g.id}`);
     assert.ok(md.includes(`\`${g.query}\``), `markdown is missing the reproduce query for ${g.id}`);
   }
   assert.match(md, /UNVERIFIED/, "offline markdown must show unverified checks");
@@ -470,6 +522,45 @@ await test("the committed corpus hash in the loop matches data/corpus.json", asy
 await test("no selector-style fabricated constant in the UI copy", async () => {
   const html = await readFile(path.join(ROOT, "public", "index.html"), "utf8");
   assert.doesNotMatch(html, /tPROS/, "the scaffold invented a token symbol");
+});
+
+// ------------------------------------------------------------------ failures
+
+suite("a broken probe cannot pass as good news");
+
+await test("a probe that throws is reported as ERROR, not as a gap or a pass", () => {
+  // Pages with no `plain` make every text probe throw. The run has to say so.
+  const broken = {
+    meta: { source: "broken", indexUrl: "broken", pageCount: 1, contentHash: "0".repeat(64) },
+    pages: [{ id: "only-page", title: "Only", url: "https://example/only", description: "", headings: [] }],
+  };
+  const audit = buildAudit({ corpus: broken, live: null, generatedAt: null });
+  const errs = audit.results.filter((r) => r.status === "ERROR");
+  assert.ok(errs.length > 0, "a corpus with no plain text must crash the probes");
+  assert.equal(audit.summary.errors, errs.length);
+  assert.equal(audit.summary.resolved, 0, "a crashed probe was counted as resolved");
+  assert.ok(
+    !audit.results.some((r) => r.status === "GAP"),
+    "a crashed probe was reported as a documentation gap",
+  );
+});
+
+await test("crashed probes are never hidden under 'not gaps'", () => {
+  const broken = {
+    meta: { source: "broken", indexUrl: "broken", pageCount: 1, contentHash: "0".repeat(64) },
+    pages: [{ id: "only-page", title: "Only", url: "https://example/only", description: "", headings: [] }],
+  };
+  const md = buildAudit({ corpus: broken, live: null, generatedAt: null }).markdown;
+  assert.match(md, /## Not evaluated \(\d+\)/);
+  assert.match(md, /excluded from the resolution rate, not counted as passes/);
+  assert.doesNotMatch(md, /## Checks the docs answer/);
+});
+
+await test("every probe can state the broken case, not just the claim it tests", () => {
+  for (const p of PROBES) {
+    assert.ok(p.gapTitle, `${p.id} has no gapTitle, so a GAP would print the passing claim`);
+    assert.notEqual(p.gapTitle, p.title);
+  }
 });
 
 // ------------------------------------------------------------------- report

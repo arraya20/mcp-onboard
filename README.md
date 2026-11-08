@@ -24,9 +24,9 @@ evidence snippet that supports it.
 | 7 | Indexing | How do I get a subgraph indexing my contract? |
 | 8 | Agent access | What are the MCP endpoint, transport, auth model, and tools? |
 
-Steps 1–3, 5–8 are answered from the documentation corpus alone. The live checks (chain IDs, TLS
-reachability, MCP tool list) are separate and optional, so an offline run never pretends to have tested
-the network.
+Steps 4–7 are answered from the documentation corpus alone. Steps 1–3 and 8 need the network to answer —
+chain IDs, TLS reachability, explorer certificates, the MCP tool list — so they are separate and optional,
+and an offline run reports them as UNVERIFIED instead of pretending to have tested the network.
 
 ## Current result
 
@@ -38,18 +38,24 @@ severity: CRITICAL 2 · HIGH 2 · MEDIUM 2 · LOW 0
 resolution rate: 25%
 ```
 
-- **CRITICAL — the docs contradict themselves on the Atlantic chain ID.** 8 pages say `688689`,
-  4 pages say `688688`, including the `forge create` and Hardhat configs. The live Atlantic RPC answers
-  `688689`, so the 4 pages are wrong. Copying them means signing for a chain that does not exist.
-- **CRITICAL — `testnet.dplabs-internal.com` cannot be reached over HTTPS.** It is the host in the Hardhat
-  quickstart. The certificate served for that hostname covers `*.zan.top`, so every client fails with a
-  hostname mismatch. `atlantic.dplabs-internal.com` is the working name, on the same backends.
-- **HIGH — no faucet URL exists anywhere in the corpus.** "faucet" appears once, as prose telling the
-  reader to use one. The Get PROS Gas page covers mainnet fiat on-ramps only.
-- **HIGH — ERC-4337 is half documented.** EntryPoint v0.6 and v0.7 addresses are published; the words
-  "bundler" and "paymaster" appear zero times in 74 pages.
-- **MEDIUM — the page titled "Foundry" contains no Foundry.** Zero mentions of `forge`. Its headings are
-  the ethers.js transaction tutorial. `forge` lives six pages deeper.
+- **CRITICAL — the docs contradict themselves on the Atlantic chain ID.** The network page publishes
+  `688689`, and the live Atlantic RPC agrees (`eth_chainId` → `0xa8231`). But `688688` appears on 4 pages,
+  and on 2 of those occurrences it sits directly under the heading **"For Atlantic Testnet"** — a
+  `forge verify-contract` command told to use an ID that is not the chain its own verifier URL indexes.
+  The remaining occurrences belong to a second, undocumented "Testnet" whose reference page does not
+  exist: no page under `getting-started/network/` mentions `688688` at all.
+- **CRITICAL — the quickstart's testnet endpoints do not work.** `testnet.dplabs-internal.com`, the host in
+  the Hardhat config, presents a certificate for `*.zan.top`, so every HTTPS client fails with a hostname
+  mismatch — on the same three backends that serve the working name, so it is a cert bug, not a dead host.
+  Beside it, the explorer `testnet.pharosscan.xyz` serves a certificate that expired in February 2026, so
+  the developer cannot confirm the deploy either. `atlantic.dplabs-internal.com` answers fine (`688689`).
+- **HIGH — no faucet URL exists anywhere in the corpus.** "faucet" appears twice, both on the same page,
+  both as prose telling the reader to use one. Not one URL in the corpus mentions a faucet. The Get PROS
+  Gas page a developer actually lands on covers mainnet fiat on-ramps only.
+- **HIGH — ERC-4337 is half documented.** The canonical-contracts page publishes the EntryPoint address,
+  and "4337" appears 9 times; the words "bundler" and "paymaster" appear zero times in 74 pages.
+- **MEDIUM — the page titled "Foundry" contains no Foundry.** It never says `forge`, and never says
+  Solidity. Its headings are the ethers.js transaction tutorial. Four deeper pages do run `forge`.
 - **MEDIUM — the Goldsky page is 2.4 KB of positioning.** No endpoint, no API-key step, no config example.
 
 Two steps resolve cleanly: the Pacific RPC, and the Pharos MCP page — whose tool list matches the live
@@ -65,7 +71,8 @@ docs.pharos.xyz/llms.txt
    data/corpus.json ────────────────┐
         │                           │
         │  src/probes.mjs           │  src/live.mjs  (optional)
-        │  8 probes, each a claim   │  chain IDs, TLS SANs, MCP tools/list
+        │  8 probes, each a claim   │  chain IDs, TLS SANs, explorer certs,
+        │                           │  MCP tools/list
         ▼                           ▼
    src/audit.mjs ── buildAudit(corpus, live) ──► reports/audit.md
                                              ├─► reports/audit.json
@@ -75,6 +82,12 @@ docs.pharos.xyz/llms.txt
 
 The dashboard renders `audit.generated.js`. It does not re-derive verdicts, so what you see in the browser
 is byte-identical to the CLI report.
+
+Every number in `reports/audit.md` is interpolated from a count, never typed into the prose, and
+`npm run verify:claims` recounts all of them from `data/corpus.json` and fails if the report disagrees.
+That gate exists because the first draft of this report had the counts written by hand: it said "faucet
+appears once" when the word appears twice, and "under 6 deeper pages" while listing three in the same
+sentence. Numbers written next to a claim drift away from the claim, silently.
 
 ### Verdicts are five-valued, on purpose
 
@@ -91,8 +104,9 @@ says so instead of quietly scoring them as wins.
 npm run build:index     # fetch the docs corpus, write data/corpus.json
 npm run audit           # offline audit: corpus only
 npm run audit:live      # + chain, TLS and MCP checks
-npm test                # 36 offline assertions + 15 API assertions
+npm test                # 41 offline + 14 report-claim + 15 API assertions
 npm run test:live       # 10 assertions against mainnet and the MCP server
+npm run verify:claims   # recount every number in reports/audit.md from the corpus
 npm run serve           # dashboard on http://127.0.0.1:8793
 ```
 
@@ -104,7 +118,7 @@ Requirements: Node 20+, `wrangler` for the dashboard. No `ethers`, no `viem`, no
 | --- | --- |
 | `GET /api/report` | the audit snapshot (JSON) |
 | `GET /api/report?format=md` | the same report as Markdown |
-| `GET /api/report?q=faucet` | literal substring search over the pinned corpus |
+| `GET /api/report?q=faucet` | literal, case-insensitive substring search over the pinned corpus |
 
 The search endpoint is deliberately dumb: case-insensitive literal match, no stemming, no synonyms, no
 ranking. When it returns zero results it says, in the response body, that zero literal matches is not proof
@@ -123,8 +137,8 @@ plausible-looking default.
 - **Probes are keyword-shaped.** "Zero mentions of paymaster" is a fact about the text, and a strong signal
   that the topic is missing, but it cannot tell whether an answer exists in a video, a Discord thread, or a
   page that uses different vocabulary.
-- **The search endpoint matches substrings.** `paymaster` fails to find `Paymasters` only if the page spells
-  it differently; it will happily match inside an unrelated word.
+- **The search endpoint matches substrings.** It is case-insensitive, so `paymaster` does find
+  `Paymasters` — but it will also match inside an unrelated word, and a plural or a hyphen breaks the hit.
 - **`eth_call`-level claims are out of scope.** This audits documentation, not contracts.
 
 ## Repository layout
@@ -133,12 +147,13 @@ plausible-looking default.
 src/corpus.mjs     parsing, plain-text collapsing, literal search, sha256   (browser-safe)
 src/probes.mjs     the eight checks, as data with an evaluate()
 src/audit.mjs      aggregation, severity rubric, Markdown renderer           (browser-safe)
-src/live.mjs       chain / TLS / MCP verification                           (node only)
-scripts/           corpus build, audit run
+src/live.mjs       chain / TLS / explorer certs / MCP verification          (node only)
+scripts/           corpus build (build-index.mjs), audit run (audit.mjs),
+                   claim recount (verify-claims.mjs)
 functions/api/     the read-only Pages Function
 public/            dashboard + generated artifacts
 reports/           committed audit.md and audit.json
-test/              36 offline, 15 API, 10 live assertions
+test/              41 offline, 14 claim, 15 API, 10 live assertions
 ```
 
 `src/corpus.mjs`, `src/probes.mjs` and `src/audit.mjs` import nothing from Node — a test enforces this by

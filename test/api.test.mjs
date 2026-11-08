@@ -143,7 +143,8 @@ await test("serves the report as markdown", async () => {
   assert.equal(res.status, 200);
   assert.match(res.headers.get("content-type") || "", /text\/markdown/);
   const text = await res.text();
-  assert.match(text, /^# Pharos Docs MCP/);
+  assert.match(text, /^# Pharos documentation/);
+  assert.doesNotMatch(text.split("\n")[0], /Docs MCP/i);
   assert.match(text, /## Summary/);
   assert.match(text, /## Gaps/);
 });
@@ -152,7 +153,8 @@ await test("the markdown body matches the JSON snapshot's claims", async () => {
   const body = await (await call()).json();
   const md = await (await call("?format=md")).text();
   for (const g of body.audit.results.filter((r) => r.status === "GAP")) {
-    assert.ok(md.includes(g.title), `markdown omits ${g.id}`);
+    // The markdown prints the broken-case headline, which is gapTitle.
+    assert.ok(md.includes(g.gapTitle || g.title), `markdown omits ${g.id}`);
   }
 });
 

@@ -98,7 +98,7 @@ function evidenceList(r) {
   return el(
     "ul",
     { class: "evidence" },
-    r.evidence.slice(0, 4).map((e) =>
+    r.evidence.slice(0, 6).map((e) =>
       el("li", {}, [
         el("a", { href: e.url, target: "_blank", rel: "noopener", text: e.id }),
         e.note ? el("span", { class: "note", text: `(${e.note})` }) : null,
@@ -108,9 +108,15 @@ function evidenceList(r) {
   );
 }
 
+/** The probe's `title` is the claim under test. Printed beside a GAP chip it
+ *  reads like a pass, so a gap renders its gapTitle instead. */
+function headline(r) {
+  return r.status === "GAP" && r.gapTitle ? r.gapTitle : r.title;
+}
+
 function gapDetail(r) {
   return el("article", { class: "detail", id: `gap-${r.id}` }, [
-    el("h3", { text: r.title }),
+    el("h3", { text: headline(r) }),
     el("div", {
       class: "meta",
       text: `${r.severity} · ${r.category} · check ${r.id}`,
@@ -158,17 +164,23 @@ function renderGaps(a) {
     body.replaceChildren(...gaps.map(gapDetail));
   }
 
-  if (resolved.length || other.length) {
+  // Two groups, not one. Folding UNVERIFIED/ERROR into "not gaps" reads as a pass,
+  // which is the exact mistake the five-valued status exists to prevent.
+  for (const [heading, items] of [
+    [`Checks the docs answer (${resolved.length})`, resolved],
+    [`Not evaluated (${other.length})`, other],
+  ]) {
+    if (!items.length) continue;
     body.append(
       el("div", { class: "rubric" }, [
-        el("h2", { text: `Steps that were not gaps (${resolved.length + other.length})` }),
+        el("h2", { text: heading }),
         el(
           "div",
           {},
-          [...resolved, ...other].map((r) =>
+          items.map((r) =>
             el("div", { class: "result" }, [
               el("div", { class: "result-head" }, [
-                el("span", { text: r.title }),
+                el("span", { text: headline(r) }),
                 statusChip(r),
               ]),
               el("blockquote", { text: r.finding }),
@@ -184,7 +196,7 @@ function renderJourney(a) {
   const rows = a.results.map((r, i) => {
     const tr = el("tr", { class: "row", tabindex: "0", role: "link" }, [
       el("td", { text: String(i + 1).padStart(2, "0") }),
-      el("td", {}, [el("span", { class: "title", text: r.title }), el("span", { class: "question", text: r.question })]),
+      el("td", {}, [el("span", { class: "title", text: headline(r) }), el("span", { class: "question", text: r.question })]),
       el("td", {}, [el("span", { class: "step-name", text: r.category })]),
       el("td", {}, [statusChip(r)]),
     ]);

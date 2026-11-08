@@ -30,6 +30,13 @@ export function extractDocumentedTools(pages) {
   return [...new Set(names)].sort();
 }
 
+/** Explorer URLs the docs actually reference, so the live check follows the
+ *  corpus instead of a hand-maintained list. */
+export function extractExplorerUrls(pages) {
+  const found = (pages.map((p) => p.plain).join(" ").match(/https?:\/\/[a-z0-9.-]*pharosscan\.xyz\/?/gi) || []);
+  return [...new Set(found.map((u) => u.replace(/\/$/, "")))].sort();
+}
+
 async function main() {
   const corpusPath = path.join(ROOT, "data", "corpus.json");
   let corpus;
@@ -41,20 +48,25 @@ async function main() {
   }
 
   const documentedTools = extractDocumentedTools(corpus.pages);
+  const explorerUrls = extractExplorerUrls(corpus.pages);
   process.stdout.write(`corpus: ${corpus.meta.pageCount} pages, hash ${corpus.meta.contentHash.slice(0, 16)}\n`);
   process.stdout.write(`documented MCP tools: ${documentedTools.length}\n`);
+  process.stdout.write(`documented explorers: ${explorerUrls.length ? explorerUrls.join(", ") : "none"}\n`);
 
   let live = null;
   if (LIVE) {
     process.stdout.write("collecting live snapshot (chain + MCP)…\n");
     try {
-      live = await collectLiveSnapshot({ documentedTools });
+      live = await collectLiveSnapshot({ documentedTools, explorerUrls });
       const p = live.pacific;
       const a = live.atlantic;
       process.stdout.write(
         `  pacific  ${p.ok ? `chainId ${p.chainId}` : `FAILED ${p.error}`}\n` +
           `  atlantic ${a.ok ? `chainId ${a.chainId}` : `FAILED ${a.error}`}\n` +
           `  testnet hosts ok=${live.atlanticTls.ok} cert=${(live.atlanticTls.certNames || []).join(",") || "n/a"}\n` +
+          `  explorers  ${live.explorers?.checked || 0} checked, ${live.explorers?.broken?.length || 0} broken${
+            live.explorers?.broken?.length ? ` (${live.explorers.broken.map((b) => b.host).join(", ")})` : ""
+          }\n` +
           `  mcp      ${live.mcp.ok ? `${live.mcp.toolCount} tools, health chainId ${live.mcp.healthChainId}` : `FAILED ${live.mcp.error}`}\n`,
       );
     } catch (err) {
@@ -104,7 +116,22 @@ async function main() {
   );
 
   for (const g of audit.results.filter((r) => r.status === "GAP")) {
-    process.stdout.write(`  [${g.severity}] ${g.title}\n`);
+    process.stdout.write(`  [${g.severity}] ${g.gapTitle || g.title}\n`);
+  }
+
+  // A probe that throws removes a check from the audit. Before this guard the
+  // run still printed a clean summary and exited 0, which is the worst possible
+  // behaviour for an auditing tool: the missing finding looked like good news.
+  const crashed = audit.results.filter((r) => r.status === "ERROR");
+  const unverified = audit.results.filter((r) => r.status === "UNVERIFIED");
+  if (crashed.length) {
+    process.stderr.write(`\n${crashed.length} probe${crashed.length === 1 ? "" : "s"} crashed — the report is incomplete:\n`);
+    for (const c of crashed) process.stderr.write(`  [ERROR] ${c.title}\n          ${c.finding}\n`);
+    process.stderr.write("Fix the probe and rerun before trusting this snapshot.\n");
+    process.exitCode = 2;
+  }
+  if (unverified.length) {
+    process.stderr.write(`\n${unverified.length} check${unverified.length === 1 ? "" : "s"} could not be verified and ${unverified.length === 1 ? "is" : "are"} excluded from the resolution rate.\n`);
   }
 }
 
@@ -120,6 +147,20 @@ function loadableLiveSummary(live) {
       certNames: live.atlanticTls.certNames,
       hosts: live.atlanticTls.all.map((h) => ({ host: h.host, ok: h.ok, chainId: h.chainId ?? null, error: h.error ?? null })),
     },
+    explorers: live.explorers
+      ? {
+          checked: live.explorers.checked,
+          broken: live.explorers.broken,
+          results: live.explorers.results.map((x) => ({
+            host: x.host,
+            ok: x.ok,
+            status: x.status ?? null,
+            error: x.error ?? null,
+            expired: x.cert?.expired ?? null,
+            validTo: x.cert?.validTo ?? null,
+          })),
+        }
+      : null,
     mcp: {
       ok: live.mcp.ok,
       toolCount: live.mcp.toolCount ?? null,

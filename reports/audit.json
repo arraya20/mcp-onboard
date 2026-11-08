@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-04T16:13:10.506Z",
+  "generatedAt": "2026-11-04T16:31:53.414Z",
   "corpus": {
     "source": "https://docs.pharos.xyz",
     "indexUrl": "https://docs.pharos.xyz/llms.txt",
@@ -8,7 +8,7 @@
     "contentHash": "58685967c38888c4d80e8b0f6513b372e53b81bc4f3b625603c5cd3a68b7161b"
   },
   "live": {
-    "fetchedAt": "2026-11-04T16:13:10.506Z",
+    "fetchedAt": "2026-11-04T16:31:53.414Z",
     "source": "live"
   },
   "summary": {
@@ -70,14 +70,43 @@
       "id": "network-atlantic-chain-id",
       "step": "network",
       "title": "Atlantic Testnet chain ID is self-consistent",
+      "gapTitle": "Atlantic Testnet chain ID contradicts itself",
       "category": "Network",
       "severity": "CRITICAL",
       "question": "Which chain ID do I pass to --chain-id when deploying to Atlantic Testnet?",
       "expectDoc": "One chain ID, used identically by the network reference page and every deploy/verify example.",
       "status": "GAP",
-      "finding": "The docs contradict themselves. 8 pages use 688689; 4 pages use 688688 — including the deploy and verify commands. The live Atlantic RPC reports 688689, so 688689 is the correct value and 688688 is wrong. A developer copying the Foundry or Hardhat example signs for a chain that does not exist.",
+      "finding": "8 pages carry 688689 and 4 carry 688688. The live RPC at atlantic.dplabs-internal.com answers eth_chainId with 0xa8231 = 688689, matching the reference page. Of the 7 occurrences of 688688, 2 sit directly under the label \"For Atlantic Testnet\", where the command then verifies against the Atlantic explorer — an ID that does not match the chain that verifier indexes. None of the 2 pages under getting-started/network/ mention 688688, so the second value has no reference page stating what network it belongs to.",
       "recommendation": "Pick one value, confirm it against eth_chainId, and fix every occurrence in one pass. Better: generate the chain ID into the examples from the network reference page so the two cannot drift.",
       "evidence": [
+        {
+          "id": "developer-guide/foundry/write-your-first-nft",
+          "title": "Write Your First NFT",
+          "url": "https://docs.pharos.xyz/developer-guide/foundry/write-your-first-nft",
+          "snippet": "…\\ <contract_address> \\ --constructor-args <abi_encoded_args> \\ src/Token.sol:Token \\ --chain-id 688688 \\ --verifier blockscout \\ --verifier-url https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer/…",
+          "note": "says 688688 under \"For Atlantic Testnet\""
+        },
+        {
+          "id": "developer-guide/foundry/write-your-first-token",
+          "title": "Write Your First Token",
+          "url": "https://docs.pharos.xyz/developer-guide/foundry/write-your-first-token",
+          "snippet": "…\\ <contract_address> \\ --constructor-args <abi_encoded_args> \\ src/Token.sol:Token \\ --chain-id 688688 \\ --verifier blockscout \\ --verifier-url https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer/…",
+          "note": "says 688688 under \"For Atlantic Testnet\""
+        },
+        {
+          "id": "developer-guide/hardhat/write-your-first-nft",
+          "title": "Write Your First NFT",
+          "url": "https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-nft",
+          "snippet": "…----------------------------------------------------------------------------- chain_name pharos chain_id 688688 rpc_endpoint https://testnet.dplabs-internal.com api_host https://api.socialscan.io/pharos-testnet/v1/e…",
+          "note": "says 688688"
+        },
+        {
+          "id": "developer-guide/hardhat/write-your-first-token",
+          "title": "Write Your First Token",
+          "url": "https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-token",
+          "snippet": "…----------------------------------------------------------------------------- chain_name pharos chain_id 688688 rpc_endpoint https://testnet.dplabs-internal.com api_host https://api.socialscan.io/pharos-testnet/v1/e…",
+          "note": "says 688688"
+        },
         {
           "id": "developer-guide/foundry/write-your-first-token",
           "title": "Write Your First Token",
@@ -133,34 +162,6 @@
           "url": "https://docs.pharos.xyz/tooling-and-infrastructure/pharos-skill-engine-guide/piggybank-skill-guide",
           "snippet": "…Name:** `Pharos Atlantic Testnet` **RPC URL:** `https://atlantic.dplabs-internal.com` **Chain ID:** `688689` **Symbol:** `PHRS` Get testnet PHRS from the Pharos faucet or directly from the team. Export your priv…",
           "note": "says 688689"
-        },
-        {
-          "id": "developer-guide/foundry/write-your-first-nft",
-          "title": "Write Your First NFT",
-          "url": "https://docs.pharos.xyz/developer-guide/foundry/write-your-first-nft",
-          "snippet": "…\\ <contract_address> \\ --constructor-args <abi_encoded_args> \\ src/Token.sol:Token \\ --chain-id 688688 \\ --verifier blockscout \\ --verifier-url https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer/…",
-          "note": "says 688688"
-        },
-        {
-          "id": "developer-guide/foundry/write-your-first-token",
-          "title": "Write Your First Token",
-          "url": "https://docs.pharos.xyz/developer-guide/foundry/write-your-first-token",
-          "snippet": "…\\ <contract_address> \\ --constructor-args <abi_encoded_args> \\ src/Token.sol:Token \\ --chain-id 688688 \\ --verifier blockscout \\ --verifier-url https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer/…",
-          "note": "says 688688"
-        },
-        {
-          "id": "developer-guide/hardhat/write-your-first-nft",
-          "title": "Write Your First NFT",
-          "url": "https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-nft",
-          "snippet": "…----------------------------------------------------------------------------- chain_name pharos chain_id 688688 rpc_endpoint https://testnet.dplabs-internal.com api_host https://api.socialscan.io/pharos-testnet/v1/e…",
-          "note": "says 688688"
-        },
-        {
-          "id": "developer-guide/hardhat/write-your-first-token",
-          "title": "Write Your First Token",
-          "url": "https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-token",
-          "snippet": "…----------------------------------------------------------------------------- chain_name pharos chain_id 688688 rpc_endpoint https://testnet.dplabs-internal.com api_host https://api.socialscan.io/pharos-testnet/v1/e…",
-          "note": "says 688688"
         }
       ],
       "query": "688688",
@@ -170,7 +171,8 @@
         "chainId": 688689,
         "chainIdHex": "0xa8231"
       },
-      "contradicts": true,
+      "mislabeled": 2,
+      "occurrences": 7,
       "values": {
         "documented": [
           688689,
@@ -182,15 +184,23 @@
     {
       "id": "network-atlantic-endpoint",
       "step": "network",
-      "title": "The testnet RPC URL in the quickstart actually connects",
+      "title": "The testnet endpoints in the quickstart actually work",
+      "gapTitle": "The testnet endpoints in the quickstart do not work",
       "category": "Network",
       "severity": "CRITICAL",
       "question": "Can I paste the quickstart's testnet RPC URL into Hardhat and have it connect?",
       "expectDoc": "The same reachable testnet hostname on the network page and in the framework configs.",
       "status": "GAP",
-      "finding": "The quickstart's testnet host testnet.dplabs-internal.com does not complete a TLS handshake. The certificate presented for testnet.dplabs-internal.com covers *.zan.top, zan.top and not testnet.dplabs-internal.com, so any HTTPS client fails with a hostname mismatch regardless of which backend serves it. atlantic.dplabs-internal.com does answer, with chain ID 688689.",
+      "finding": "The quickstart's testnet host testnet.dplabs-internal.com does not complete a TLS handshake. The certificate presented for testnet.dplabs-internal.com covers *.zan.top, zan.top and not testnet.dplabs-internal.com, so any HTTPS client fails with a hostname mismatch regardless of which backend serves it. atlantic.dplabs-internal.com does answer, with chain ID 688689. The explorer listed beside the same config, testnet.pharosscan.xyz, is unreachable too: its certificate expired on Feb  5 07:58:19 2026 GMT, so the developer has no way to confirm the deploy landed.",
       "recommendation": "Replace the hostname in the Foundry and Hardhat examples with the one the certificate actually covers. This is the worst class of bug for a quickstart: the error surfaces as a TLS failure in the developer's own code.",
       "evidence": [
+        {
+          "id": "live:testnet.pharosscan.xyz",
+          "title": "testnet.pharosscan.xyz (reachability check)",
+          "url": "https://testnet.pharosscan.xyz",
+          "snippet": "Certificate notAfter Feb  5 07:58:19 2026 GMT — expired before this audit ran. CERT_HAS_EXPIRED: certificate has expired",
+          "note": "live check"
+        },
         {
           "id": "developer-guide/hardhat/write-your-first-nft",
           "title": "Write Your First NFT",
@@ -256,7 +266,9 @@
                 "*.zan.top",
                 "zan.top"
               ],
-              "cn": "*.zan.top"
+              "cn": "*.zan.top",
+              "validTo": "Jan  7 23:59:59 2027 GMT",
+              "expired": false
             }
           }
         ],
@@ -277,7 +289,9 @@
                 "*.zan.top",
                 "zan.top"
               ],
-              "cn": "*.zan.top"
+              "cn": "*.zan.top",
+              "validTo": "Jan  7 23:59:59 2027 GMT",
+              "expired": false
             }
           },
           {
@@ -288,7 +302,9 @@
             "chainIdHex": "0xa8231",
             "cert": {
               "names": [],
-              "cn": null
+              "cn": null,
+              "validTo": null,
+              "expired": null
             }
           }
         ]
@@ -298,6 +314,7 @@
       "id": "network-pacific-rpc",
       "step": "network",
       "title": "Connect to Pacific Mainnet",
+      "gapTitle": "Pacific Mainnet does not connect",
       "category": "Network",
       "severity": "CRITICAL",
       "question": "What is the Pacific Mainnet RPC URL and chain ID, and does it work?",
@@ -337,12 +354,13 @@
       "id": "gas-testnet-faucet",
       "step": "gas",
       "title": "Get testnet gas to deploy",
+      "gapTitle": "There is no documented way to get testnet gas",
       "category": "Onboarding",
       "severity": "HIGH",
       "question": "Where do I get Atlantic Testnet PHRS?",
       "expectDoc": "A faucet URL developers can use themselves, with any eligibility rules.",
       "status": "GAP",
-      "finding": "No faucet URL is published anywhere in the corpus. \"faucet\" appears once, always as prose instructing the reader to use one, never with a link or eligibility rule. The page a developer lands on, Get PROS Gas, covers mainnet acquisition through fiat on-ramps (Halliday, Alchemy Pay, TopNod) — it does not mention a faucet at all.",
+      "finding": "No URL in the corpus mentions a faucet. \"faucet\" itself appears 2 times on 1 page, both times as prose telling the reader to use one. The page a developer lands on, Get PROS Gas, covers mainnet acquisition through fiat on-ramps (Halliday, Alchemy Pay, TopNod) — it does not mention a faucet at all.",
       "recommendation": "Publish the faucet URL, its rate limit, and any address or balance requirement on the Atlantic Testnet page next to the RPC details. Testnet gas is the first thing that blocks a deploy.",
       "evidence": [
         {
@@ -359,12 +377,13 @@
       "id": "toolchain-foundry-landing",
       "step": "toolchain",
       "title": "The Foundry guide teaches Foundry",
+      "gapTitle": "The Foundry guide does not teach Foundry",
       "category": "Toolchain",
       "severity": "MEDIUM",
       "question": "I opened the Foundry guide — where is forge?",
       "expectDoc": "forge install, forge build, forge create, and foundry.toml on the page titled Foundry.",
       "status": "GAP",
-      "finding": "The page titled \"Foundry\" contains no Foundry content: zero mentions of forge, zero of Solidity. Its sections are \"Write Your First Transaction\", \"Prerequisites\", \"Setup 1: Pick Your Favorite Contract Develop Framework and IDE\", \"Setup 2: Set Up the Project\" — it is the ethers.js / web3.js transaction tutorial. Real forge commands exist, but under 6 deeper pages (write-your-first-dapp, write-your-first-nft, write-your-first-token), so a developer following the nav hierarchy concludes Foundry is unsupported.",
+      "finding": "The page titled \"Foundry\" never uses the word forge, and never uses Solidity. Its sections are \"Write Your First Transaction\", \"Prerequisites\", \"Setup 1: Pick Your Favorite Contract Develop Framework and IDE\", \"Setup 2: Set Up the Project\" — it is the ethers.js / web3.js transaction tutorial. Real forge commands exist, but under 4 deeper pages (write-your-first-dapp, write-your-first-nft, write-your-first-token, write-your-first-uniswap-contract), so a developer following the nav hierarchy concludes Foundry is unsupported.",
       "recommendation": "Either retitle this page to what it is (Send a Transaction with ethers.js) and add a real Foundry landing page, or move the forge deploy/verify content up to it. A section titled Foundry that never says forge is worse than a missing page.",
       "evidence": [
         {
@@ -390,21 +409,28 @@
           "title": "Write Your First Token",
           "url": "https://docs.pharos.xyz/developer-guide/foundry/write-your-first-token",
           "snippet": "…Install OpenZeppelin Contracts: Foundry uses forge to manage dependencies. Install OpenZeppelin contracts: forge install OpenZeppelin/openzeppelin-contracts --no-git ### Setup 3: Write the Token Contract Create a New …"
+        },
+        {
+          "id": "developer-guide/foundry/write-your-first-uniswap-contract",
+          "title": "Write Your First Uniswap Contract",
+          "url": "https://docs.pharos.xyz/developer-guide/foundry/write-your-first-uniswap-contract",
+          "snippet": "…Install OpenZeppelin Contracts: Foundry uses forge to manage dependencies. Install OpenZeppelin contracts: forge install OpenZeppelin/openzeppelin-contracts --no-git ### Step 3: Write the Uniswap Contract Create a New…"
         }
       ],
-      "query": "developer-guide/foundry",
+      "query": "forge install",
       "live": null
     },
     {
       "id": "aa-bundler-paymaster",
       "step": "account-abstraction",
       "title": "Submit a UserOperation: bundler and paymaster",
+      "gapTitle": "No bundler or paymaster, so a UserOperation cannot be submitted",
       "category": "Account Abstraction",
       "severity": "HIGH",
       "question": "Where is the public bundler RPC and the paymaster for ERC-4337 on Pharos?",
       "expectDoc": "A bundler endpoint that accepts eth_sendUserOperation, and a paymaster address or sponsoring policy.",
       "status": "GAP",
-      "finding": "Account abstraction is name-dropped 9 times and the EntryPoint contract addresses are published (v0.6 and v0.7, on both networks), but the words \"bundler\" and \"paymaster\" appear zero times in all 74 pages. Knowing the EntryPoint address is not enough to submit a UserOperation: you need a bundler endpoint that accepts it, and without a paymaster the account must still hold PROS for gas. The docs describe the destination and omit the transport.",
+      "finding": "\"account abstraction\" appears 3 times and \"4337\" 9 times, and the EntryPoint contract address is published on the canonical-contracts page, but \"bundler\" appears 0 times and \"paymaster\" 0 times in all 74 pages. Knowing the EntryPoint address is not enough to submit a UserOperation: you need a bundler endpoint that accepts it, and without a paymaster the account must still hold PROS for gas. The docs describe the destination and omit the transport.",
       "recommendation": "Add an ERC-4337 page: bundler RPC URL(s) with their rate limits, a minimal UserOperation example against the published EntryPoint, and whether any paymaster is available on Atlantic. Link it from the canonical contracts table where the EntryPoint is already listed.",
       "evidence": [
         {
@@ -414,19 +440,20 @@
           "snippet": "…Permit2 Next-generation token approval system 0x000000000022D473030F116dDEE9F6B43aC78BA3 EntryPoint (v0.7.0) ERC-4337 entry point for account abstraction 0x0000000071727De22E5E9d8BAf0edAc6f37da032 Se…"
         }
       ],
-      "query": "bundler paymaster",
+      "query": "bundler",
       "live": null
     },
     {
       "id": "indexing-goldsky-quickstart",
       "step": "indexing",
       "title": "Index contract events with Goldsky",
+      "gapTitle": "The Goldsky page does not explain how to index events",
       "category": "Indexing",
       "severity": "MEDIUM",
       "question": "How do I create a subgraph for my contract on Pharos?",
       "expectDoc": "A config snippet, an API key flow, and a Pharos network name to pass to the Goldsky CLI.",
       "status": "GAP",
-      "finding": "The Goldsky page is 2453 characters of positioning: 7 headings, 1 outbound link(s) to goldsky.com, and no endpoint, no API-key or login step, and no config example. The provider list names Goldsky as the only indexing option, so this page is the entire indexing story on Pharos, and it ends where the work starts.",
+      "finding": "The Goldsky page is 2453 characters of positioning: 7 headings, 1 outbound link to goldsky.com, and no endpoint, no API-key or login step, and no config example. The provider list names Goldsky as the only indexing option, so this page is the entire indexing story on Pharos, and it ends where the work starts.",
       "recommendation": "Add the Pharos network entry for the Goldsky CLI, an API-key step, and a minimal subgraph.yaml plus a query example against a deployed Pharos subgraph. Even a link straight to the Pharos-specific Goldsky quickstart would unblock this.",
       "evidence": [
         {
@@ -443,6 +470,7 @@
       "id": "agent-mcp-wire-format",
       "step": "agent-access",
       "title": "Connect an agent over MCP",
+      "gapTitle": "The documented MCP tools do not match the live server",
       "category": "Agent Access",
       "severity": "HIGH",
       "question": "What are the MCP endpoint, transport, auth model, and available tools?",
@@ -506,5 +534,5 @@
     "MEDIUM": "The developer can proceed but wastes time on a detour the docs created — wrong page title, missing example, or a link that dead-ends.",
     "LOW": "Polish. Incomplete but not misleading."
   },
-  "markdown": "# Pharos Docs MCP — Self-Onboarding Gap Audit\n\nAudited **74 pages** of `https://docs.pharos.xyz` (corpus hash `58685967c38888c4`).\nLive checks were run against the chain and the MCP server at 2026-11-04T16:13:10.506Z.\n\n## Summary\n\n| Metric | Value |\n| --- | --- |\n| Onboarding checks | 8 |\n| Resolved by the docs | 2 |\n| Gaps | 6 |\n| Unverified (no live proof) | 0 |\n| Resolution rate | 25% of 8 checks |\n| Gaps by severity | CRITICAL 2 · HIGH 2 · MEDIUM 2 · LOW 0 |\n\nResolution rate counts only checks the docs actually answered. 0 check(s) could not be verified and are excluded from the numerator rather than assumed good.\n\n## Journey\n\n| # | Step | Status | Severity |\n| --- | --- | --- | --- |\n| 1 | Atlantic Testnet chain ID is self-consistent | GAP | CRITICAL |\n| 2 | The testnet RPC URL in the quickstart actually connects | GAP | CRITICAL |\n| 3 | Connect to Pacific Mainnet | RESOLVED | — |\n| 4 | Get testnet gas to deploy | GAP | HIGH |\n| 5 | The Foundry guide teaches Foundry | GAP | MEDIUM |\n| 6 | Submit a UserOperation: bundler and paymaster | GAP | HIGH |\n| 7 | Index contract events with Goldsky | GAP | MEDIUM |\n| 8 | Connect an agent over MCP | RESOLVED | — |\n\n## Gaps (6)\n\n### [CRITICAL] Atlantic Testnet chain ID is self-consistent\n\n**Developer question.** Which chain ID do I pass to --chain-id when deploying to Atlantic Testnet?\n\n**Finding.** The docs contradict themselves. 8 pages use 688689; 4 pages use 688688 — including the deploy and verify commands. The live Atlantic RPC reports 688689, so 688689 is the correct value and 688688 is wrong. A developer copying the Foundry or Hardhat example signs for a chain that does not exist.\n\n**Evidence.**\n\n- `developer-guide/foundry/write-your-first-token` _(says 688689)_ — https://docs.pharos.xyz/developer-guide/foundry/write-your-first-token\n  > …\\ <contract_address> \\ --constructor-args <abi_encoded_args> \\ src/Token.sol:Token \\ --chain-id 688689 \\ --verifier blockscout \\ --verifier-url https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer/…\n- `developer-guide/hardhat/write-your-first-nft` _(says 688689)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-nft\n  > …chain_name pharos chain_id 688689 rpc_endpoint https://atlantic.dplabs-internal.com\" api_host https://api.socialscan.io/pharos-atlantic-t…\n- `developer-guide/hardhat/write-your-first-token` _(says 688689)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-token\n  > …chain_name pharos chain_id 688689 rpc_endpoint https://atlantic.dplabs-internal.com\" api_host https://api.socialscan.io/pharos-atlantic-t…\n- `developer-guide/x402/x402-atlantic-testnet` _(says 688689)_ — https://docs.pharos.xyz/developer-guide/x402/x402-atlantic-testnet\n  > …evmScheme.registerMoneyParser(async (amount: number, network: string) => { if (network === \"eip155:688689\") { return { amount: Math.round(amount * 1e6).toString(), // Convert to integer string (e.g., 0.01 → \"1…\n\n**Reproduce.** Search the corpus for `688688`.\n\n**Recommendation.** Pick one value, confirm it against eth_chainId, and fix every occurrence in one pass. Better: generate the chain ID into the examples from the network reference page so the two cannot drift.\n\n### [CRITICAL] The testnet RPC URL in the quickstart actually connects\n\n**Developer question.** Can I paste the quickstart's testnet RPC URL into Hardhat and have it connect?\n\n**Finding.** The quickstart's testnet host testnet.dplabs-internal.com does not complete a TLS handshake. The certificate presented for testnet.dplabs-internal.com covers *.zan.top, zan.top and not testnet.dplabs-internal.com, so any HTTPS client fails with a hostname mismatch regardless of which backend serves it. atlantic.dplabs-internal.com does answer, with chain ID 688689.\n\n**Evidence.**\n\n- `developer-guide/hardhat/write-your-first-nft` _(testnet.dplabs-internal.com)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-nft\n  > …chain_name pharos chain_id 688688 rpc_endpoint https://testnet.dplabs-internal.com api_host https://api.socialscan.io/pharos-testnet/v1/explorer/command\\_api/contrac…\n- `developer-guide/hardhat/write-your-first-token` _(testnet.dplabs-internal.com)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-token\n  > …chain_name pharos chain_id 688688 rpc_endpoint https://testnet.dplabs-internal.com api_host https://api.socialscan.io/pharos-testnet/v1/explorer/command\\_api/contrac…\n- `developer-guide/hardhat/write-your-first-nft` _(atlantic.dplabs-internal.com)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-nft\n  > …chain_name pharos chain_id 688689 rpc_endpoint https://atlantic.dplabs-internal.com\" api_host https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer/command\\_…\n- `developer-guide/hardhat/write-your-first-token` _(atlantic.dplabs-internal.com)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-token\n  > …chain_name pharos chain_id 688689 rpc_endpoint https://atlantic.dplabs-internal.com\" api_host https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer/command\\_…\n\n**Reproduce.** Search the corpus for `testnet.dplabs-internal.com`.\n\n**Recommendation.** Replace the hostname in the Foundry and Hardhat examples with the one the certificate actually covers. This is the worst class of bug for a quickstart: the error surfaces as a TLS failure in the developer's own code.\n\n### [HIGH] Get testnet gas to deploy\n\n**Developer question.** Where do I get Atlantic Testnet PHRS?\n\n**Finding.** No faucet URL is published anywhere in the corpus. \"faucet\" appears once, always as prose instructing the reader to use one, never with a link or eligibility rule. The page a developer lands on, Get PROS Gas, covers mainnet acquisition through fiat on-ramps (Halliday, Alchemy Pay, TopNod) — it does not mention a faucet at all.\n\n**Evidence.**\n\n- `tooling-and-infrastructure/pharos-skill-engine-guide/piggybank-skill-guide` — https://docs.pharos.xyz/tooling-and-infrastructure/pharos-skill-engine-guide/piggybank-skill-guide\n  > …**Chain ID:** `688689` **Symbol:** `PHRS` Get testnet PHRS from the Pharos faucet or directly from the team. Export your private key — you will need it when deploying > ⚠️ **Security Wa…\n\n**Reproduce.** Search the corpus for `faucet`.\n\n**Recommendation.** Publish the faucet URL, its rate limit, and any address or balance requirement on the Atlantic Testnet page next to the RPC details. Testnet gas is the first thing that blocks a deploy.\n\n### [MEDIUM] The Foundry guide teaches Foundry\n\n**Developer question.** I opened the Foundry guide — where is forge?\n\n**Finding.** The page titled \"Foundry\" contains no Foundry content: zero mentions of forge, zero of Solidity. Its sections are \"Write Your First Transaction\", \"Prerequisites\", \"Setup 1: Pick Your Favorite Contract Develop Framework and IDE\", \"Setup 2: Set Up the Project\" — it is the ethers.js / web3.js transaction tutorial. Real forge commands exist, but under 6 deeper pages (write-your-first-dapp, write-your-first-nft, write-your-first-token), so a developer following the nav hierarchy concludes Foundry is unsupported.\n\n**Evidence.**\n\n- `developer-guide/foundry` — https://docs.pharos.xyz/developer-guide/foundry\n  > Foundry / Write Your First Transaction / Prerequisites / Setup 1: Pick Your Favorite Contract Develop Framework and IDE / Setup 2: Set Up the Project / Step 3: Run the Script / Key Points / Troubleshooting / Conclusion\n- `developer-guide/foundry/write-your-first-dapp` — https://docs.pharos.xyz/developer-guide/foundry/write-your-first-dapp\n  > …3: Deploy the Smart Contract Set the private key: export PRIVATE_KEY=<your private key> Then cd contract forge install OpenZeppelin/openzeppelin-contracts --no-git forge script script/Counter.s.sol:CounterScript --r…\n- `developer-guide/foundry/write-your-first-nft` — https://docs.pharos.xyz/developer-guide/foundry/write-your-first-nft\n  > …Install OpenZeppelin Contracts: Foundry uses forge to manage dependencies. Install OpenZeppelin contracts: forge install OpenZeppelin/openzeppelin-contracts --no-git ### Setup 3: Write the NFT Contract Create a New So…\n- `developer-guide/foundry/write-your-first-token` — https://docs.pharos.xyz/developer-guide/foundry/write-your-first-token\n  > …Install OpenZeppelin Contracts: Foundry uses forge to manage dependencies. Install OpenZeppelin contracts: forge install OpenZeppelin/openzeppelin-contracts --no-git ### Setup 3: Write the Token Contract Create a New …\n\n**Reproduce.** Search the corpus for `developer-guide/foundry`.\n\n**Recommendation.** Either retitle this page to what it is (Send a Transaction with ethers.js) and add a real Foundry landing page, or move the forge deploy/verify content up to it. A section titled Foundry that never says forge is worse than a missing page.\n\n### [HIGH] Submit a UserOperation: bundler and paymaster\n\n**Developer question.** Where is the public bundler RPC and the paymaster for ERC-4337 on Pharos?\n\n**Finding.** Account abstraction is name-dropped 9 times and the EntryPoint contract addresses are published (v0.6 and v0.7, on both networks), but the words \"bundler\" and \"paymaster\" appear zero times in all 74 pages. Knowing the EntryPoint address is not enough to submit a UserOperation: you need a bundler endpoint that accepts it, and without a paymaster the account must still hold PROS for gas. The docs describe the destination and omit the transport.\n\n**Evidence.**\n\n- `getting-started/canonical-contracts` — https://docs.pharos.xyz/getting-started/canonical-contracts\n  > …Permit2 Next-generation token approval system 0x000000000022D473030F116dDEE9F6B43aC78BA3 EntryPoint (v0.7.0) ERC-4337 entry point for account abstraction 0x0000000071727De22E5E9d8BAf0edAc6f37da032 Se…\n\n**Reproduce.** Search the corpus for `bundler paymaster`.\n\n**Recommendation.** Add an ERC-4337 page: bundler RPC URL(s) with their rate limits, a minimal UserOperation example against the published EntryPoint, and whether any paymaster is available on Atlantic. Link it from the canonical contracts table where the EntryPoint is already listed.\n\n### [MEDIUM] Index contract events with Goldsky\n\n**Developer question.** How do I create a subgraph for my contract on Pharos?\n\n**Finding.** The Goldsky page is 2453 characters of positioning: 7 headings, 1 outbound link(s) to goldsky.com, and no endpoint, no API-key or login step, and no config example. The provider list names Goldsky as the only indexing option, so this page is the entire indexing story on Pharos, and it ends where the work starts.\n\n**Evidence.**\n\n- `tooling-and-infrastructure/indexing/goldsky` — https://docs.pharos.xyz/tooling-and-infrastructure/indexing/goldsky\n  > # Goldsky Goldsky is a high-performance data indexing provider that makes it easy to extract, transform, and load on-chain data to power both application and analytics use cases. ## Indexing Pharos with Goldsky Goldsky is Web3’s realtime da\n\n**Reproduce.** Search the corpus for `goldsky`.\n\n**Recommendation.** Add the Pharos network entry for the Goldsky CLI, an API-key step, and a minimal subgraph.yaml plus a query example against a deployed Pharos subgraph. Even a link straight to the Pharos-specific Goldsky quickstart would unblock this.\n\n## Not gaps (2)\n\n**RESOLVED** — Connect to Pacific Mainnet\n\n> Documented endpoint https://rpc.pharos.xyz answers eth_chainId with 0x688 = 1672, matching the published chain ID.\n\n**RESOLVED** — Connect an agent over MCP\n\n> This step resolves cleanly. All 14 tools exposed by the live server are documented, no documented tool is missing, and the documented /health response matches the server exactly (chainId 1672). The page also specifies transport, auth, rate limit, block-parameter forms, and the 1000-block cap on get_logs.\n\n## Severity rubric\n\n- **CRITICAL** — Following the docs as written produces a failed transaction or a failed connection. The developer cannot proceed, and the docs look correct while doing it.\n- **HIGH** — The developer must leave the docs and find the answer elsewhere, or guess. The task is possible but blocked on missing information.\n- **MEDIUM** — The developer can proceed but wastes time on a detour the docs created — wrong page title, missing example, or a link that dead-ends.\n- **LOW** — Polish. Incomplete but not misleading.\n\n---\n\nEvery finding above is reproducible: the corpus hash pins the documentation snapshot, and each gap names the query that surfaced it. Regenerate with `npm run audit`.\n"
+  "markdown": "# Pharos documentation — first-time developer gap audit\n\nTask `docs-mcp-onboarding`. No documentation MCP server exists for Pharos: `mcp.pharos.xyz` is a chain JSON-RPC server. The audit therefore runs against the documentation corpus itself — **74 pages** of `https://docs.pharos.xyz` (corpus hash `58685967c38888c4`).\nLive checks were run against the chain and the MCP server at 2026-11-04T16:31:53.414Z.\n\nAll counts below are literal, case-insensitive substring occurrences over the pinned corpus — the same rule the search box uses, so every number here can be reproduced by typing the query. No stemming, no synonyms, no fuzzy matching.\n\n## Summary\n\n| Metric | Value |\n| --- | --- |\n| Onboarding checks | 8 |\n| Resolved by the docs | 2 |\n| Gaps | 6 |\n| Unverified (no live proof) | 0 |\n| Resolution rate | 25% of 8 checks |\n| Gaps by severity | CRITICAL 2 · HIGH 2 · MEDIUM 2 · LOW 0 |\n\nResolution rate counts only checks the docs actually answered. Every check below produced a verdict from evidence.\n\n## Journey\n\n| # | Step | Status | Severity |\n| --- | --- | --- | --- |\n| 1 | Atlantic Testnet chain ID contradicts itself | GAP | CRITICAL |\n| 2 | The testnet endpoints in the quickstart do not work | GAP | CRITICAL |\n| 3 | Connect to Pacific Mainnet | RESOLVED | — |\n| 4 | There is no documented way to get testnet gas | GAP | HIGH |\n| 5 | The Foundry guide does not teach Foundry | GAP | MEDIUM |\n| 6 | No bundler or paymaster, so a UserOperation cannot be submitted | GAP | HIGH |\n| 7 | The Goldsky page does not explain how to index events | GAP | MEDIUM |\n| 8 | Connect an agent over MCP | RESOLVED | — |\n\n## Gaps (6)\n\n### [CRITICAL] Atlantic Testnet chain ID contradicts itself\n\n**Developer question.** Which chain ID do I pass to --chain-id when deploying to Atlantic Testnet?\n\n**Finding.** 8 pages carry 688689 and 4 carry 688688. The live RPC at atlantic.dplabs-internal.com answers eth_chainId with 0xa8231 = 688689, matching the reference page. Of the 7 occurrences of 688688, 2 sit directly under the label \"For Atlantic Testnet\", where the command then verifies against the Atlantic explorer — an ID that does not match the chain that verifier indexes. None of the 2 pages under getting-started/network/ mention 688688, so the second value has no reference page stating what network it belongs to.\n\n**Evidence.**\n\n_Showing 6 of 12 citing sources._\n\n- `developer-guide/foundry/write-your-first-nft` _(says 688688 under \"For Atlantic Testnet\")_ — https://docs.pharos.xyz/developer-guide/foundry/write-your-first-nft\n  > …\\ <contract_address> \\ --constructor-args <abi_encoded_args> \\ src/Token.sol:Token \\ --chain-id 688688 \\ --verifier blockscout \\ --verifier-url https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer/…\n- `developer-guide/foundry/write-your-first-token` _(says 688688 under \"For Atlantic Testnet\")_ — https://docs.pharos.xyz/developer-guide/foundry/write-your-first-token\n  > …\\ <contract_address> \\ --constructor-args <abi_encoded_args> \\ src/Token.sol:Token \\ --chain-id 688688 \\ --verifier blockscout \\ --verifier-url https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer/…\n- `developer-guide/hardhat/write-your-first-nft` _(says 688688)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-nft\n  > …----------------------------------------------------------------------------- chain_name pharos chain_id 688688 rpc_endpoint https://testnet.dplabs-internal.com api_host https://api.socialscan.io/pharos-testnet/v1/e…\n- `developer-guide/hardhat/write-your-first-token` _(says 688688)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-token\n  > …----------------------------------------------------------------------------- chain_name pharos chain_id 688688 rpc_endpoint https://testnet.dplabs-internal.com api_host https://api.socialscan.io/pharos-testnet/v1/e…\n- `developer-guide/foundry/write-your-first-token` _(says 688689)_ — https://docs.pharos.xyz/developer-guide/foundry/write-your-first-token\n  > …\\ <contract_address> \\ --constructor-args <abi_encoded_args> \\ src/Token.sol:Token \\ --chain-id 688689 \\ --verifier blockscout \\ --verifier-url https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer/…\n- `developer-guide/hardhat/write-your-first-nft` _(says 688689)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-nft\n  > …chain_name pharos chain_id 688689 rpc_endpoint https://atlantic.dplabs-internal.com\" api_host https://api.socialscan.io/pharos-atlantic-t…\n\n**Reproduce.** Search the corpus for `688688` — via the box on the dashboard, or run `node scripts/verify-claims.mjs` to recount every number in this report.\n\n**Recommendation.** Pick one value, confirm it against eth_chainId, and fix every occurrence in one pass. Better: generate the chain ID into the examples from the network reference page so the two cannot drift.\n\n### [CRITICAL] The testnet endpoints in the quickstart do not work\n\n**Developer question.** Can I paste the quickstart's testnet RPC URL into Hardhat and have it connect?\n\n**Finding.** The quickstart's testnet host testnet.dplabs-internal.com does not complete a TLS handshake. The certificate presented for testnet.dplabs-internal.com covers *.zan.top, zan.top and not testnet.dplabs-internal.com, so any HTTPS client fails with a hostname mismatch regardless of which backend serves it. atlantic.dplabs-internal.com does answer, with chain ID 688689. The explorer listed beside the same config, testnet.pharosscan.xyz, is unreachable too: its certificate expired on Feb  5 07:58:19 2026 GMT, so the developer has no way to confirm the deploy landed.\n\n**Evidence.**\n\n_Showing 6 of 7 citing sources._\n\n- `live:testnet.pharosscan.xyz` _(live check)_ — https://testnet.pharosscan.xyz\n  > Certificate notAfter Feb 5 07:58:19 2026 GMT — expired before this audit ran. CERT_HAS_EXPIRED: certificate has expired\n- `developer-guide/hardhat/write-your-first-nft` _(testnet.dplabs-internal.com)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-nft\n  > …chain_name pharos chain_id 688688 rpc_endpoint https://testnet.dplabs-internal.com api_host https://api.socialscan.io/pharos-testnet/v1/explorer/command\\_api/contrac…\n- `developer-guide/hardhat/write-your-first-token` _(testnet.dplabs-internal.com)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-token\n  > …chain_name pharos chain_id 688688 rpc_endpoint https://testnet.dplabs-internal.com api_host https://api.socialscan.io/pharos-testnet/v1/explorer/command\\_api/contrac…\n- `developer-guide/hardhat/write-your-first-nft` _(atlantic.dplabs-internal.com)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-nft\n  > …chain_name pharos chain_id 688689 rpc_endpoint https://atlantic.dplabs-internal.com\" api_host https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer/command\\_…\n- `developer-guide/hardhat/write-your-first-token` _(atlantic.dplabs-internal.com)_ — https://docs.pharos.xyz/developer-guide/hardhat/write-your-first-token\n  > …chain_name pharos chain_id 688689 rpc_endpoint https://atlantic.dplabs-internal.com\" api_host https://api.socialscan.io/pharos-atlantic-testnet/v1/explorer/command\\_…\n- `developer-guide/x402/x402-atlantic-testnet` _(atlantic.dplabs-internal.com)_ — https://docs.pharos.xyz/developer-guide/x402/x402-atlantic-testnet\n  > …nativeCurrency: { name: \"PHRS\", symbol: \"PHRS\", decimals: 18 }, rpcUrls: { default: { http: [\"https://atlantic.dplabs-internal.com/\"] } }, // Pharos RPC endpoint testnet: true, }); // Create wallet client const a…\n\n**Reproduce.** Search the corpus for `testnet.dplabs-internal.com` — via the box on the dashboard, or run `node scripts/verify-claims.mjs` to recount every number in this report.\n\n**Recommendation.** Replace the hostname in the Foundry and Hardhat examples with the one the certificate actually covers. This is the worst class of bug for a quickstart: the error surfaces as a TLS failure in the developer's own code.\n\n### [HIGH] There is no documented way to get testnet gas\n\n**Developer question.** Where do I get Atlantic Testnet PHRS?\n\n**Finding.** No URL in the corpus mentions a faucet. \"faucet\" itself appears 2 times on 1 page, both times as prose telling the reader to use one. The page a developer lands on, Get PROS Gas, covers mainnet acquisition through fiat on-ramps (Halliday, Alchemy Pay, TopNod) — it does not mention a faucet at all.\n\n**Evidence.**\n\n- `tooling-and-infrastructure/pharos-skill-engine-guide/piggybank-skill-guide` — https://docs.pharos.xyz/tooling-and-infrastructure/pharos-skill-engine-guide/piggybank-skill-guide\n  > …**Chain ID:** `688689` **Symbol:** `PHRS` Get testnet PHRS from the Pharos faucet or directly from the team. Export your private key — you will need it when deploying > ⚠️ **Security Wa…\n\n**Reproduce.** Search the corpus for `faucet` — via the box on the dashboard, or run `node scripts/verify-claims.mjs` to recount every number in this report.\n\n**Recommendation.** Publish the faucet URL, its rate limit, and any address or balance requirement on the Atlantic Testnet page next to the RPC details. Testnet gas is the first thing that blocks a deploy.\n\n### [MEDIUM] The Foundry guide does not teach Foundry\n\n**Developer question.** I opened the Foundry guide — where is forge?\n\n**Finding.** The page titled \"Foundry\" never uses the word forge, and never uses Solidity. Its sections are \"Write Your First Transaction\", \"Prerequisites\", \"Setup 1: Pick Your Favorite Contract Develop Framework and IDE\", \"Setup 2: Set Up the Project\" — it is the ethers.js / web3.js transaction tutorial. Real forge commands exist, but under 4 deeper pages (write-your-first-dapp, write-your-first-nft, write-your-first-token, write-your-first-uniswap-contract), so a developer following the nav hierarchy concludes Foundry is unsupported.\n\n**Evidence.**\n\n- `developer-guide/foundry` — https://docs.pharos.xyz/developer-guide/foundry\n  > Foundry / Write Your First Transaction / Prerequisites / Setup 1: Pick Your Favorite Contract Develop Framework and IDE / Setup 2: Set Up the Project / Step 3: Run the Script / Key Points / Troubleshooting / Conclusion\n- `developer-guide/foundry/write-your-first-dapp` — https://docs.pharos.xyz/developer-guide/foundry/write-your-first-dapp\n  > …3: Deploy the Smart Contract Set the private key: export PRIVATE_KEY=<your private key> Then cd contract forge install OpenZeppelin/openzeppelin-contracts --no-git forge script script/Counter.s.sol:CounterScript --r…\n- `developer-guide/foundry/write-your-first-nft` — https://docs.pharos.xyz/developer-guide/foundry/write-your-first-nft\n  > …Install OpenZeppelin Contracts: Foundry uses forge to manage dependencies. Install OpenZeppelin contracts: forge install OpenZeppelin/openzeppelin-contracts --no-git ### Setup 3: Write the NFT Contract Create a New So…\n- `developer-guide/foundry/write-your-first-token` — https://docs.pharos.xyz/developer-guide/foundry/write-your-first-token\n  > …Install OpenZeppelin Contracts: Foundry uses forge to manage dependencies. Install OpenZeppelin contracts: forge install OpenZeppelin/openzeppelin-contracts --no-git ### Setup 3: Write the Token Contract Create a New …\n- `developer-guide/foundry/write-your-first-uniswap-contract` — https://docs.pharos.xyz/developer-guide/foundry/write-your-first-uniswap-contract\n  > …Install OpenZeppelin Contracts: Foundry uses forge to manage dependencies. Install OpenZeppelin contracts: forge install OpenZeppelin/openzeppelin-contracts --no-git ### Step 3: Write the Uniswap Contract Create a New…\n\n**Reproduce.** Search the corpus for `forge install` — via the box on the dashboard, or run `node scripts/verify-claims.mjs` to recount every number in this report.\n\n**Recommendation.** Either retitle this page to what it is (Send a Transaction with ethers.js) and add a real Foundry landing page, or move the forge deploy/verify content up to it. A section titled Foundry that never says forge is worse than a missing page.\n\n### [HIGH] No bundler or paymaster, so a UserOperation cannot be submitted\n\n**Developer question.** Where is the public bundler RPC and the paymaster for ERC-4337 on Pharos?\n\n**Finding.** \"account abstraction\" appears 3 times and \"4337\" 9 times, and the EntryPoint contract address is published on the canonical-contracts page, but \"bundler\" appears 0 times and \"paymaster\" 0 times in all 74 pages. Knowing the EntryPoint address is not enough to submit a UserOperation: you need a bundler endpoint that accepts it, and without a paymaster the account must still hold PROS for gas. The docs describe the destination and omit the transport.\n\n**Evidence.**\n\n- `getting-started/canonical-contracts` — https://docs.pharos.xyz/getting-started/canonical-contracts\n  > …Permit2 Next-generation token approval system 0x000000000022D473030F116dDEE9F6B43aC78BA3 EntryPoint (v0.7.0) ERC-4337 entry point for account abstraction 0x0000000071727De22E5E9d8BAf0edAc6f37da032 Se…\n\n**Reproduce.** Search the corpus for `bundler` — via the box on the dashboard, or run `node scripts/verify-claims.mjs` to recount every number in this report.\n\n**Recommendation.** Add an ERC-4337 page: bundler RPC URL(s) with their rate limits, a minimal UserOperation example against the published EntryPoint, and whether any paymaster is available on Atlantic. Link it from the canonical contracts table where the EntryPoint is already listed.\n\n### [MEDIUM] The Goldsky page does not explain how to index events\n\n**Developer question.** How do I create a subgraph for my contract on Pharos?\n\n**Finding.** The Goldsky page is 2453 characters of positioning: 7 headings, 1 outbound link to goldsky.com, and no endpoint, no API-key or login step, and no config example. The provider list names Goldsky as the only indexing option, so this page is the entire indexing story on Pharos, and it ends where the work starts.\n\n**Evidence.**\n\n- `tooling-and-infrastructure/indexing/goldsky` — https://docs.pharos.xyz/tooling-and-infrastructure/indexing/goldsky\n  > # Goldsky Goldsky is a high-performance data indexing provider that makes it easy to extract, transform, and load on-chain data to power both application and analytics use cases. ## Indexing Pharos with Goldsky Goldsky is Web3’s realtime da\n\n**Reproduce.** Search the corpus for `goldsky` — via the box on the dashboard, or run `node scripts/verify-claims.mjs` to recount every number in this report.\n\n**Recommendation.** Add the Pharos network entry for the Goldsky CLI, an API-key step, and a minimal subgraph.yaml plus a query example against a deployed Pharos subgraph. Even a link straight to the Pharos-specific Goldsky quickstart would unblock this.\n\n## Checks the docs answer (2)\n\n**RESOLVED** — Connect to Pacific Mainnet\n\n> Documented endpoint https://rpc.pharos.xyz answers eth_chainId with 0x688 = 1672, matching the published chain ID.\n\n**RESOLVED** — Connect an agent over MCP\n\n> This step resolves cleanly. All 14 tools exposed by the live server are documented, no documented tool is missing, and the documented /health response matches the server exactly (chainId 1672). The page also specifies transport, auth, rate limit, block-parameter forms, and the 1000-block cap on get_logs.\n\n## Severity rubric\n\n- **CRITICAL** — Following the docs as written produces a failed transaction or a failed connection. The developer cannot proceed, and the docs look correct while doing it.\n- **HIGH** — The developer must leave the docs and find the answer elsewhere, or guess. The task is possible but blocked on missing information.\n- **MEDIUM** — The developer can proceed but wastes time on a detour the docs created — wrong page title, missing example, or a link that dead-ends.\n- **LOW** — Polish. Incomplete but not misleading.\n\n---\n\nEvery finding above is reproducible: the corpus hash pins the documentation snapshot, and each gap names the query that surfaced it. Regenerate with `npm run audit`.\n"
 }

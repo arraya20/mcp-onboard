@@ -117,7 +117,13 @@ export function snippetAround(plain, index, radius = 110) {
 }
 
 /**
- * Compile a query. A string is a LITERAL substring; a RegExp is used as-is.
+ * Compile a query. A string is a LITERAL case-insensitive substring; a RegExp is
+ * used as-is, flags included.
+ *
+ * Case-insensitive because the HTTP search endpoint is case-insensitive, and the
+ * report tells the reader to reproduce every number by typing the query into that
+ * box. Two different rules would print two different counts for one question —
+ * which is the same class of bug as a hand-typed number.
  *
  * This shape is deliberate. An earlier version ran every string through
  * escapeRe(), so a caller who passed an already-escaped pattern got it escaped
@@ -133,19 +139,28 @@ function asMatcher(pattern, { global = false } = {}) {
     return new RegExp(pattern.source, flags);
   }
   if (typeof pattern !== "string") throw new TypeError("pattern must be a string or RegExp");
-  const needle = pattern;
+  const needle = pattern.toLowerCase();
+  // Fold case on a shadow copy. Snippet offsets are taken from the original, so
+  // the shadow is only used when folding preserves length; for text where it
+  // does not (a few non-Latin cases) fall back to an exact match rather than
+  // hand back offsets that point somewhere else.
+  const fold = (text) => {
+    const lower = text.toLowerCase();
+    return lower.length === text.length ? lower : text;
+  };
   return {
     exec(text) {
-      const i = text.indexOf(needle);
+      const i = fold(text).indexOf(needle);
       if (i === -1) return null;
-      return { index: i, 0: needle, length: 1 };
+      return { index: i, 0: text.slice(i, i + needle.length), length: needle.length };
     },
     all(text) {
+      const hay = fold(text);
       const out = [];
-      let i = text.indexOf(needle);
+      let i = hay.indexOf(needle);
       while (i !== -1) {
         out.push(i);
-        i = text.indexOf(needle, i + needle.length || 1);
+        i = hay.indexOf(needle, i + needle.length || 1);
       }
       return out;
     },
@@ -187,6 +202,52 @@ export function countInCorpus(pages, pattern) {
     n += matcher.all ? matcher.all(page.plain).length : countMatches(matcher, page.plain);
   }
   return n;
+}
+
+/**
+ * Every occurrence of a literal, with the text on each side.
+ *
+ * A count alone cannot tell you *why* a string is there. The chain-ID probe
+ * needs to distinguish "688688 appears on this page" from "688688 appears
+ * directly under a heading that says Atlantic", and only the second one is a
+ * contradiction. Returning the surrounding window lets a probe classify an
+ * occurrence instead of guessing from its presence.
+ */
+export function matchContexts(pages, pattern, { window = 170 } = {}) {
+  const isRe = pattern instanceof RegExp;
+  const matcher = asMatcher(pattern);
+  const out = [];
+  for (const page of pages) {
+    // Both branches yield {index, length}. A literal goes through the shared
+    // matcher so it means the same thing here as everywhere else — same case
+    // folding. A RegExp has to be walked itself, because asMatcher returns a
+    // bare RegExp for that case and a per-match length cannot be recovered from
+    // an index alone.
+    const spans = [];
+    if (isRe) {
+      const flags = pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g";
+      const re = new RegExp(pattern.source, flags);
+      let m;
+      while ((m = re.exec(page.plain)) !== null) {
+        spans.push({ index: m.index, length: m[0].length });
+        if (m[0].length === 0) re.lastIndex += 1;
+      }
+    } else {
+      for (const i of matcher.all(page.plain)) spans.push({ index: i, length: pattern.length });
+    }
+    for (const { index, length } of spans) {
+      out.push({
+        id: page.id,
+        title: page.title,
+        url: page.url,
+        index,
+        before: page.plain.slice(Math.max(0, index - window), index),
+        after: page.plain.slice(index + length, index + length + window),
+        snippet: snippetAround(page.plain, index, 110),
+      });
+    }
+  }
+  return out;
 }
 
 export function escapeRe(s) {

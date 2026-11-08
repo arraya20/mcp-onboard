@@ -11,7 +11,8 @@
     "build:index": "node scripts/build-index.mjs",
     "audit": "node scripts/audit.mjs",
     "audit:live": "node scripts/audit.mjs --live",
-    "test": "node test/offline.test.mjs && node test/api.test.mjs",
+    "test": "node test/offline.test.mjs && node test/claims.test.mjs && node test/api.test.mjs",
+    "verify:claims": "node scripts/verify-claims.mjs",
     "test:live": "node test/live.test.mjs",
     "serve": "wrangler pages dev public --port 8793",
     "deploy": "wrangler pages deploy public --project-name pharos-docs-gap-audit"

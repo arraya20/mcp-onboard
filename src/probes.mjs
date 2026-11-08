@@ -10,7 +10,7 @@
 // `step` follows the order a developer hits these problems in, which is the
 // order the report prints them in.
 
-import { findInCorpus, countInCorpus } from "./corpus.mjs";
+import { findInCorpus, countInCorpus, matchContexts } from "./corpus.mjs";
 
 export const STEP_ORDER = [
   "network",
@@ -41,6 +41,7 @@ export const PROBES = [
     id: "network-pacific-rpc",
     step: "network",
     title: "Connect to Pacific Mainnet",
+    gapTitle: "Pacific Mainnet does not connect",
     category: "Network",
     severity: "CRITICAL",
     question: "What is the Pacific Mainnet RPC URL and chain ID, and does it work?",
@@ -90,6 +91,7 @@ export const PROBES = [
     id: "network-atlantic-chain-id",
     step: "network",
     title: "Atlantic Testnet chain ID is self-consistent",
+    gapTitle: "Atlantic Testnet chain ID contradicts itself",
     category: "Network",
     severity: "CRITICAL",
     question: "Which chain ID do I pass to --chain-id when deploying to Atlantic Testnet?",
@@ -97,11 +99,41 @@ export const PROBES = [
     evaluate(pages, live) {
       const right = findInCorpus(pages, "688689", { limit: 10 });
       const wrong = findInCorpus(pages, "688688", { limit: 10 });
-      const evidence = [
-        ...right.map(({ id, title, url, snippet }) => ({ id, title, url, snippet, note: "says 688689" })),
-        ...wrong.map(({ id, title, url, snippet }) => ({ id, title, url, snippet, note: "says 688688" })),
-      ];
       const truth = live?.atlantic;
+
+      // Not every 688688 is a contradiction. The Hardhat guides use it in a
+      // block labelled "For Testnet", which is at least internally honest. The
+      // contradiction is an occurrence that sits under the label "For Atlantic
+      // Testnet": a verify command told to use an ID that is not the chain its
+      // own verifier URL indexes. Classify each occurrence instead of assuming.
+      const occurrences = matchContexts(pages, "688688", { window: 240 });
+      const labelOf = (before) => {
+        const matches = [...before.matchAll(/for\s+((?:atlantic\s+)?testnet)/gi)];
+        return matches.length ? matches[matches.length - 1][1].replace(/\s+/g, " ").toLowerCase() : null;
+      };
+      const mislabeled = occurrences.filter((o) => (labelOf(o.before) || "").includes("atlantic"));
+      const networkPages = pages.filter((p) => p.id.startsWith("getting-started/network/"));
+      const networkWith688 = networkPages.filter((p) => p.plain.includes("688688"));
+
+      // Order matters: the renderer shows only the first few. Lead with the
+      // occurrences that are the contradiction, otherwise a reader sees four
+      // pages that agree with the correct value and never the proof.
+      const mislabeledIds = new Set(mislabeled.map((o) => o.id));
+      const evidence = [
+        ...wrong
+          .filter((w) => mislabeledIds.has(w.id))
+          .map(({ id, title, url, snippet }) => ({
+            id,
+            title,
+            url,
+            snippet,
+            note: 'says 688688 under "For Atlantic Testnet"',
+          })),
+        ...wrong
+          .filter((w) => !mislabeledIds.has(w.id))
+          .map(({ id, title, url, snippet }) => ({ id, title, url, snippet, note: "says 688688" })),
+        ...right.map(({ id, title, url, snippet }) => ({ id, title, url, snippet, note: "says 688689" })),
+      ];
 
       if (!wrong.length) {
         return verdict({
@@ -113,23 +145,29 @@ export const PROBES = [
         });
       }
 
-      const contradiction = right.length > 0;
       const truthNote = truth?.ok
-        ? ` The live Atlantic RPC reports ${truth.chainId}${truth.chainId === 688689 ? ", so 688689 is the correct value and 688688 is wrong" : ""}.`
+        ? ` The live RPC at atlantic.dplabs-internal.com answers eth_chainId with 0x${truth.chainId.toString(16)} = ${truth.chainId}, matching the reference page.`
+        : " The live chain was not queried, so the correct value is taken from the reference page alone.";
+      const labelNote = mislabeled.length
+        ? ` Of the ${occurrences.length} occurrences of 688688, ${mislabeled.length} sit${mislabeled.length === 1 ? "s" : ""} directly under the label "For Atlantic Testnet", where the command then verifies against the Atlantic explorer — an ID that does not match the chain that verifier indexes.`
+        : "";
+      const networkNote = networkWith688.length === 0
+        ? ` None of the ${networkPages.length} pages under getting-started/network/ mention${networkPages.length === 1 ? "s" : ""} 688688, so the second value has no reference page stating what network it belongs to.`
         : "";
 
       return verdict({
         status: truth?.ok && truth.chainId === 688689 ? "GAP" : "UNVERIFIED",
         query: "688688",
         finding:
-          `The docs contradict themselves. ${right.length} pages use 688689; ${wrong.length} pages use 688688 — including the deploy and verify commands.` +
+          `${right.length} pages carry 688689 and ${wrong.length} carry 688688.` +
           truthNote +
-          " A developer copying the Foundry or Hardhat example signs for a chain that does not exist.",
+          labelNote +
+          networkNote,
         recommendation:
           "Pick one value, confirm it against eth_chainId, and fix every occurrence in one pass. Better: generate the chain ID into the examples from the network reference page so the two cannot drift.",
         evidence,
         live: truth || null,
-        extra: { contradicts: contradiction, values: { documented: [688689, 688688], live: truth?.chainId ?? null } },
+        extra: { mislabeled: mislabeled.length, occurrences: occurrences.length, values: { documented: [688689, 688688], live: truth?.chainId ?? null } },
       });
     },
   },
@@ -137,7 +175,8 @@ export const PROBES = [
   {
     id: "network-atlantic-endpoint",
     step: "network",
-    title: "The testnet RPC URL in the quickstart actually connects",
+    title: "The testnet endpoints in the quickstart actually work",
+    gapTitle: "The testnet endpoints in the quickstart do not work",
     category: "Network",
     severity: "CRITICAL",
     question: "Can I paste the quickstart's testnet RPC URL into Hardhat and have it connect?",
@@ -146,6 +185,13 @@ export const PROBES = [
       const hosts = ["testnet.dplabs-internal.com", "atlantic.dplabs-internal.com"];
       const evidence = hosts.flatMap((h) =>
         findInCorpus(pages, h, { limit: 4 }).map(({ id, title, url, snippet }) => ({ id, title, url, snippet, note: h })),
+      );
+      // The explorer URLs are read out of the corpus, so the check follows the
+      // docs instead of a list maintained by hand in this file.
+      const explorerHosts = [...new Set((pages.map((p) => p.plain).join(" ").match(/[a-z0-9.-]*pharosscan\.xyz/gi) || []))].sort();
+      const explorerResults = live?.explorers?.results || [];
+      const explorerBroken = explorerResults.filter(
+        (x) => explorerHosts.includes(x.host) && !x.ok,
       );
       const probe = live?.atlanticTls;
 
@@ -168,16 +214,39 @@ export const PROBES = [
           live: probe,
         });
       }
+      const explorerEvidence = explorerBroken.map((x) => ({
+        id: `live:${x.host}`,
+        title: `${x.host} (reachability check)`,
+        url: x.url,
+        snippet: x.cert.expired
+          ? `Certificate notAfter ${x.cert.validTo} — expired before this audit ran. ${x.error || ""}`.trim()
+          : `No response over HTTPS: ${x.error || "connection failed"}`,
+        note: "live check",
+      }));
+      const explorerNote = explorerBroken.length
+        ? " " +
+          explorerBroken
+            .map((x) => {
+              const why = x.cert.expired
+                ? `its certificate expired on ${x.cert.validTo}`
+                : `it does not answer over HTTPS (${x.error || "connection failed"})`;
+              return `The explorer listed beside the same config, ${x.host}, is unreachable too: ${why}`;
+            })
+            .join(". ") +
+          ", so the developer has no way to confirm the deploy landed."
+        : "";
+
       return verdict({
         status: "GAP",
         query: "testnet.dplabs-internal.com",
         finding:
           `The quickstart's testnet host ${probe.failing} does not complete a TLS handshake. ` +
-          `The certificate presented for ${probe.failing} covers ${probe.certNames.join(", ")} and not ${probe.failing}, so any HTTPS client fails with a hostname mismatch regardless of which backend serves it. ` +
-          `${probe.working} does answer, with chain ID ${probe.workingChainId}.`,
+          `The certificate presented for ${probe.failing} covers ${probe.certNames.join(", ") || "other names"} and not ${probe.failing}, so any HTTPS client fails with a hostname mismatch regardless of which backend serves it. ` +
+          `${probe.working} does answer, with chain ID ${probe.workingChainId}.` +
+          explorerNote,
         recommendation:
           "Replace the hostname in the Foundry and Hardhat examples with the one the certificate actually covers. This is the worst class of bug for a quickstart: the error surfaces as a TLS failure in the developer's own code.",
-        evidence,
+        evidence: [...explorerEvidence, ...evidence],
         live: probe,
       });
     },
@@ -188,12 +257,24 @@ export const PROBES = [
     id: "gas-testnet-faucet",
     step: "gas",
     title: "Get testnet gas to deploy",
+    gapTitle: "There is no documented way to get testnet gas",
     category: "Onboarding",
     severity: "HIGH",
     question: "Where do I get Atlantic Testnet PHRS?",
     expectDoc: "A faucet URL developers can use themselves, with any eligibility rules.",
     evaluate(pages) {
       const mentions = findInCorpus(pages, "faucet", { limit: 6 });
+      const occurrences = countInCorpus(pages, "faucet");
+      // Proximity is not a link. An earlier version counted any URL within 140
+      // characters of the word "faucet" and reported "1 mention carries a link"
+      // in the same paragraph that said no faucet URL is published. Count the
+      // thing the finding actually claims: URLs that mention a faucet.
+      const faucetUrls = (
+        pages
+          .map((p) => p.plain)
+          .join(" ")
+          .match(/https?:\/\/[^\s)\]]*faucet[^\s)\]]*/gi) || []
+      ).length;
       const gasPage = pages.find((p) => p.id === "getting-started/get-pros-gas");
       const gasIsMainnet = gasPage ? /mainnet|Halliday|Alchemy Pay|TopNod/i.test(gasPage.plain) : false;
       const hasFaucetUrl = /faucet[^.]{0,120}https?:\/\//i.test(
@@ -215,7 +296,7 @@ export const PROBES = [
         status: "GAP",
         query: "faucet",
         finding:
-          `No faucet URL is published anywhere in the corpus. "faucet" appears ${mentions.length === 1 ? "once" : `${mentions.length} times`}, always as prose instructing the reader to use one, never with a link or eligibility rule. ` +
+          `${faucetUrls === 0 ? "No URL in the corpus mentions a faucet" : `${faucetUrls} URL${faucetUrls === 1 ? "" : "s"} in the corpus mention a faucet`}. "faucet" itself appears ${occurrences} time${occurrences === 1 ? "" : "s"} on ${mentions.length} page${mentions.length === 1 ? "" : "s"}, both times as prose telling the reader to use one. ` +
           `The page a developer lands on, Get PROS Gas, covers ${gasIsMainnet ? "mainnet acquisition through fiat on-ramps (Halliday, Alchemy Pay, TopNod)" : "acquisition but not the testnet path"} — it does not mention a faucet at all.`,
         recommendation:
           "Publish the faucet URL, its rate limit, and any address or balance requirement on the Atlantic Testnet page next to the RPC details. Testnet gas is the first thing that blocks a deploy.",
@@ -229,6 +310,7 @@ export const PROBES = [
     id: "toolchain-foundry-landing",
     step: "toolchain",
     title: "The Foundry guide teaches Foundry",
+    gapTitle: "The Foundry guide does not teach Foundry",
     category: "Toolchain",
     severity: "MEDIUM",
     question: "I opened the Foundry guide — where is forge?",
@@ -238,19 +320,27 @@ export const PROBES = [
       if (!landing) {
         return verdict({
           status: "UNVERIFIED",
-          query: "developer-guide/foundry",
+          query: "forge install",
           finding: "No page with this id in the corpus.",
           recommendation: "Check whether the page moved.",
         });
       }
       const forgeOnLanding = countInCorpus([landing], /\bforge\b/i);
       const solidityOnLanding = countInCorpus([landing], /solidity/i);
-      const subpages = findInCorpus(pages, /\bforge\s+(?:create|build|install|verify)\b/i, { limit: 6 });
+      // Restricted to the Foundry subtree on purpose: a corpus-wide search for
+      // forge commands also matches the skill guides, which made the earlier
+      // count disagree with the page list printed beside it.
+      const subpages = pages
+        .filter((p) => p.id.startsWith("developer-guide/foundry/") && /\bforge\b/i.test(p.plain))
+        .map((p) => {
+          const hit = findInCorpus([p], /\bforge\s+(?:create|build|install|verify|script)\b/i, { limit: 1 })[0];
+          return { id: p.id, title: p.title, url: p.url, snippet: hit ? hit.snippet : p.plain.slice(0, 160) };
+        });
 
       if (forgeOnLanding > 0) {
         return verdict({
           status: "RESOLVED",
-          query: "developer-guide/foundry",
+          query: "forge install",
           finding: `The landing page mentions forge ${forgeOnLanding} times.`,
           recommendation: "None — this step resolves.",
           evidence: [{ id: landing.id, title: landing.title, url: landing.url, snippet: landing.headings.join(" / ") }],
@@ -258,21 +348,25 @@ export const PROBES = [
       }
       return verdict({
         status: "GAP",
-        query: "developer-guide/foundry",
+        query: "forge install",
         finding:
-          `The page titled "Foundry" contains no Foundry content: zero mentions of forge, zero of Solidity. Its sections are ${landing.headings
+          (forgeOnLanding === 0 && solidityOnLanding === 0
+            ? `The page titled "Foundry" never uses the word forge, and never uses Solidity.`
+            : `The page titled "Foundry" mentions forge ${forgeOnLanding} time${forgeOnLanding === 1 ? "" : "s"} and Solidity ${solidityOnLanding} time${solidityOnLanding === 1 ? "" : "s"}, so the title mostly holds.`) +
+          ` Its sections are ${landing.headings
             .slice(1, 5)
             .map((h) => `"${h}"`)
             .join(", ")} — it is the ethers.js / web3.js transaction tutorial. ` +
-          `Real forge commands exist, but under ${subpages.length} deeper pages (${subpages
-            .slice(0, 3)
-            .map((h) => h.id.replace("developer-guide/foundry/", ""))
-            .join(", ")}), so a developer following the nav hierarchy concludes Foundry is unsupported.`,
+          (subpages.length
+            ? `Real forge commands exist, but under ${subpages.length} deeper page${subpages.length === 1 ? "" : "s"} (${subpages
+                .map((h) => h.id.replace("developer-guide/foundry/", ""))
+                .join(", ")}), so a developer following the nav hierarchy concludes Foundry is unsupported.`
+            : "No page in the Foundry subtree runs a forge command."),
         recommendation:
           "Either retitle this page to what it is (Send a Transaction with ethers.js) and add a real Foundry landing page, or move the forge deploy/verify content up to it. A section titled Foundry that never says forge is worse than a missing page.",
         evidence: [
           { id: landing.id, title: landing.title, url: landing.url, snippet: landing.headings.join(" / ") },
-          ...subpages.slice(0, 3).map(({ id, title, url, snippet }) => ({ id, title, url, snippet })),
+          ...subpages.map(({ id, title, url, snippet }) => ({ id, title, url, snippet })),
         ],
       });
     },
@@ -283,6 +377,7 @@ export const PROBES = [
     id: "aa-bundler-paymaster",
     step: "account-abstraction",
     title: "Submit a UserOperation: bundler and paymaster",
+    gapTitle: "No bundler or paymaster, so a UserOperation cannot be submitted",
     category: "Account Abstraction",
     severity: "HIGH",
     question: "Where is the public bundler RPC and the paymaster for ERC-4337 on Pharos?",
@@ -292,7 +387,11 @@ export const PROBES = [
       const hasEntryPoint = entryPoint ? /EntryPoint/i.test(entryPoint.plain) : false;
       const bundler = countInCorpus(pages, /bundler/i);
       const paymaster = countInCorpus(pages, /paymaster/i);
-      const aa = countInCorpus(pages, "4337");
+      // "account abstraction" and "4337" are different strings with different
+      // counts. Reporting one as the other is how a real gap turns into a fake
+      // number, so both are counted and both are labelled.
+      const aaPhrase = countInCorpus(pages, "account abstraction");
+      const eip = countInCorpus(pages, "4337");
 
       const evidence = [];
       if (entryPoint) {
@@ -303,7 +402,7 @@ export const PROBES = [
       if (bundler > 0 && paymaster > 0) {
         return verdict({
           status: "RESOLVED",
-          query: "bundler paymaster",
+          query: "bundler",
           finding: `Bundler appears ${bundler} times and paymaster ${paymaster} times.`,
           recommendation: "None — this step resolves.",
           evidence,
@@ -311,9 +410,9 @@ export const PROBES = [
       }
       return verdict({
         status: "GAP",
-        query: "bundler paymaster",
+        query: "bundler",
         finding:
-          `Account abstraction is name-dropped ${aa} times and the EntryPoint contract addresses are published${hasEntryPoint ? " (v0.6 and v0.7, on both networks)" : ""}, but the words "bundler" and "paymaster" appear zero times in all ${pages.length} pages. ` +
+          `"account abstraction" appears ${aaPhrase} time${aaPhrase === 1 ? "" : "s"} and "4337" ${eip === 1 ? "once" : `${eip} times`}, and the EntryPoint contract address is published${hasEntryPoint ? " on the canonical-contracts page" : ""}, but "bundler" appears ${bundler} time${bundler === 1 ? "" : "s"} and "paymaster" ${paymaster} time${paymaster === 1 ? "" : "s"} in all ${pages.length} pages. ` +
           "Knowing the EntryPoint address is not enough to submit a UserOperation: you need a bundler endpoint that accepts it, and without a paymaster the account must still hold PROS for gas. " +
           "The docs describe the destination and omit the transport.",
         recommendation:
@@ -328,6 +427,7 @@ export const PROBES = [
     id: "indexing-goldsky-quickstart",
     step: "indexing",
     title: "Index contract events with Goldsky",
+    gapTitle: "The Goldsky page does not explain how to index events",
     category: "Indexing",
     severity: "MEDIUM",
     question: "How do I create a subgraph for my contract on Pharos?",
@@ -345,7 +445,9 @@ export const PROBES = [
       const hasEndpoint = /endpoint|rpc:\s*https|api\.goldsky/i.test(page.plain);
       const hasKeyFlow = /api key|api-key|--token|login/i.test(page.plain);
       const hasConfig = /\.yaml|\.json|subgraph\.yaml|networks\.json/i.test(page.plain);
-      const offsiteLinks = (page.plain.match(/https?:\/\/\S*goldsky\S*/gi) || []).length;
+      const offsiteLinks = new Set(
+        (page.plain.match(/https?:\/\/(?:[^\s/]*\.)?goldsky\.com[^\s]*/gi) || []).map((u) => u.replace(/[.,;:)\]]+$/, "")),
+      ).size;
 
       if (hasEndpoint || hasKeyFlow || hasConfig) {
         return verdict({
@@ -360,7 +462,7 @@ export const PROBES = [
         status: "GAP",
         query: "goldsky",
         finding:
-          `The Goldsky page is ${page.plain.length} characters of positioning: ${page.headings.length} headings, ${offsiteLinks} outbound link(s) to goldsky.com, and no endpoint, no API-key or login step, and no config example. ` +
+          `The Goldsky page is ${page.plain.length} characters of positioning: ${page.headings.length} headings, ${offsiteLinks} outbound link${offsiteLinks === 1 ? "" : "s"} to goldsky.com, and no endpoint, no API-key or login step, and no config example. ` +
           "The provider list names Goldsky as the only indexing option, so this page is the entire indexing story on Pharos, and it ends where the work starts.",
         recommendation:
           "Add the Pharos network entry for the Goldsky CLI, an API-key step, and a minimal subgraph.yaml plus a query example against a deployed Pharos subgraph. Even a link straight to the Pharos-specific Goldsky quickstart would unblock this.",
@@ -374,6 +476,7 @@ export const PROBES = [
     id: "agent-mcp-wire-format",
     step: "agent-access",
     title: "Connect an agent over MCP",
+    gapTitle: "The documented MCP tools do not match the live server",
     category: "Agent Access",
     severity: "HIGH",
     question: "What are the MCP endpoint, transport, auth model, and available tools?",
@@ -461,6 +564,7 @@ export function runProbes(pages, live = null) {
       id: probe.id,
       step: probe.step,
       title: probe.title,
+      gapTitle: probe.gapTitle || null,
       category: probe.category,
       severity: probe.severity,
       question: probe.question,
