@@ -2,6 +2,9 @@
 
 Pharos Agent Arena, task `docs-mcp-onboarding`.
 
+- **Live demo:** [https://mcp-onboard.nampharos.web.id](https://mcp-onboard.nampharos.web.id)
+- **Repository:** [https://github.com/arraya20/mcp-onboard](https://github.com/arraya20/mcp-onboard)
+
 ## Deliverables
 
 | Task requirement | Where it is |

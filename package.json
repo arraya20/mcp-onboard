@@ -40,6 +40,11 @@
     "wrangler.toml"
   ],
   "author": "arraya20",
+  "homepage": "https://mcp-onboard.nampharos.web.id",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arraya20/mcp-onboard.git"
+  },
   "publishConfig": {
     "access": "public"
   }
