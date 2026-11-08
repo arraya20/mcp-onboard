@@ -14,8 +14,8 @@
     "test": "node test/offline.test.mjs && node test/claims.test.mjs && node test/api.test.mjs",
     "verify:claims": "node scripts/verify-claims.mjs",
     "test:live": "node test/live.test.mjs",
-    "serve": "wrangler pages dev public --port 8793",
-    "deploy": "wrangler pages deploy public --project-name pharos-docs-gap-audit"
+    "serve": "npx --yes wrangler pages dev public --port 8793 --ip 127.0.0.1",
+    "deploy": "npx --yes wrangler pages deploy public"
   },
   "keywords": [
     "pharos",

@@ -110,7 +110,28 @@ npm run verify:claims   # recount every number in reports/audit.md from the corp
 npm run serve           # dashboard on http://127.0.0.1:8793
 ```
 
-Requirements: Node 20+, `wrangler` for the dashboard. No `ethers`, no `viem`, no database.
+Requirements: Node 20+ (uses the built-in test runner and `fetch`). No `npm install` — there are
+no dependencies, and nothing here imports `ethers` or `viem`. `wrangler` is pulled through `npx`
+for the dashboard only.
+
+## Deploying
+
+```bash
+npx wrangler login      # once
+npm run deploy          # reads wrangler.toml, uploads public/ and functions/
+```
+
+`wrangler.toml` pins `compatibility_date` and sets `pages_build_output_dir`, so the deploy needs no
+flags and does not inherit a moving runtime default. The Function bundle is ~118 KB gzipped, well
+inside the Workers limit. Nothing needs an API key, a database, or a build step: `data/corpus.json`
+and the `*.generated.js` artifacts are committed.
+
+Regenerate the artifacts and re-run the audit before deploying, or the site ships yesterday's
+findings:
+
+```bash
+npm run build:index && npm run audit:live && npm test
+```
 
 ## API
 
