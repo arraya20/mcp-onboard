@@ -13,6 +13,7 @@
 import { AUDIT } from "../../public/audit.generated.js";
 import { CORPUS } from "../../public/corpus.generated.js";
 import { REPORT_MD } from "../../public/report.generated.js";
+import { MCP_SESSION } from "../../public/mcp-session.generated.js";
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -83,6 +84,24 @@ export async function onRequestGet({ request }) {
       status: 200,
       headers: { ...JSON_HEADERS, "content-type": "text/markdown; charset=utf-8" },
     });
+  }
+
+  if (url.searchParams.get("format") === "mcp-md") {
+    if (!MCP_SESSION || typeof MCP_SESSION.markdown !== "string" || !MCP_SESSION.markdown.length) {
+      return json({ ok: false, error: "Docs MCP session artifact missing — run `npm run mcp:render`" }, 500);
+    }
+    return new Response(MCP_SESSION.markdown, {
+      status: 200,
+      headers: { ...JSON_HEADERS, "content-type": "text/markdown; charset=utf-8" },
+    });
+  }
+
+  if (url.searchParams.get("format") === "mcp") {
+    if (!MCP_SESSION || !Array.isArray(MCP_SESSION.steps)) {
+      return json({ ok: false, error: "Docs MCP session artifact missing — run `npm run mcp:render`" }, 500);
+    }
+    const { markdown: _m, ...rest } = MCP_SESSION;
+    return json({ ok: true, mcpSession: rest });
   }
 
   if (q === null) {

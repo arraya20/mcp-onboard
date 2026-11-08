@@ -507,7 +507,7 @@ await test("index.html ships no invented metrics", async () => {
 });
 
 await test("generated artifacts carry the do-not-edit banner", async () => {
-  for (const f of ["audit.generated.js", "corpus.generated.js", "report.generated.js"]) {
+  for (const f of ["audit.generated.js", "corpus.generated.js", "report.generated.js", "mcp-session.generated.js"]) {
     const src = await readFile(path.join(ROOT, "public", f), "utf8");
     assert.match(src, /GENERATED/, `${f} is missing its banner`);
   }

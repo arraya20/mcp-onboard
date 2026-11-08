@@ -158,6 +158,24 @@ await test("the markdown body matches the JSON snapshot's claims", async () => {
   }
 });
 
+await test("serves the Docs MCP session log as markdown and JSON", async () => {
+  const mdRes = await call("?format=mcp-md");
+  assert.equal(mdRes.status, 200);
+  assert.match(mdRes.headers.get("content-type") || "", /text\/markdown/);
+  const md = await mdRes.text();
+  assert.match(md, /^# Docs MCP onboarding — session log/);
+  assert.match(md, /## Step-by-step log/);
+  assert.match(md, /## Gaps and suggested fixes/);
+  assert.match(md, /## What I managed to build or run by the end/);
+
+  const jsonRes = await call("?format=mcp");
+  assert.equal(jsonRes.status, 200);
+  const body = await jsonRes.json();
+  assert.equal(body.ok, true);
+  assert.equal(body.mcpSession.summary.totalSteps, 9);
+  assert.equal(body.mcpSession.summary.gaps, 7);
+});
+
 // ------------------------------------------------------------------ options
 
 process.stdout.write("\nOPTIONS\n");

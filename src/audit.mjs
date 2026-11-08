@@ -12,7 +12,7 @@ const EVIDENCE_SHOWN = 6;
 /**
  * One audit snapshot.
  *
- * `status` per step is deliberately four-valued. A binary pass/fail forces the
+ * `status` per step is deliberately five-valued. A binary pass/fail forces the
  * dishonest move of calling an unchecked step "passed" (the usual failure mode
  * of audit tools) or "failed" (which invents a gap). UNVERIFIED means exactly
  * what it says and is never counted as resolved.
@@ -93,7 +93,7 @@ function renderMarkdown(a) {
   lines.push("# Pharos documentation — first-time developer gap audit");
   lines.push("");
   lines.push(
-    `Task \`docs-mcp-onboarding\`. No documentation MCP server exists for Pharos: \`mcp.pharos.xyz\` is a chain JSON-RPC server. The audit therefore runs against the documentation corpus itself — **${a.corpus.pageCount} pages** of \`${a.corpus.source}\` (corpus hash \`${a.corpus.contentHash.slice(0, 16)}\`).`,
+    `Task \`docs-mcp-onboarding\`. The first-hand onboarding through the Pharos Developer Docs MCP (\`docs.pharos.xyz/~gitbook/mcp\`) is logged in \`docs/mcp-session-log.md\`. This report is its cross-check: the same journey, recounted offline over a pinned snapshot of **${a.corpus.pageCount} pages** of \`${a.corpus.source}\` (corpus hash \`${a.corpus.contentHash.slice(0, 16)}\`).`,
   );
   if (a.live) {
     lines.push(

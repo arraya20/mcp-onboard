@@ -33,6 +33,7 @@
 
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-gaps" aria-controls="panel-gaps" aria-selected="true">Gaps<span class="count" id="countGaps"></span></button>
+    <button class="tab" role="tab" id="tab-mcp" aria-controls="panel-mcp" aria-selected="false">Docs MCP log<span class="count" id="countMcp"></span></button>
     <button class="tab" role="tab" id="tab-journey" aria-controls="panel-journey" aria-selected="false">Full journey<span class="count" id="countJourney"></span></button>
     <button class="tab" role="tab" id="tab-search" aria-controls="panel-search" aria-selected="false">Search the corpus</button>
   </div>
@@ -43,6 +44,14 @@
       <button class="btn" id="btnJson">Download snapshot (.json)</button>
     </div>
     <div id="gapsBody"></div>
+  </section>
+
+  <section class="panel" id="panel-mcp" role="tabpanel" aria-labelledby="tab-mcp" hidden>
+    <div class="actions">
+      <button class="btn" id="btnMcpMd">Download Docs MCP log (.md)</button>
+      <button class="btn" id="btnMcpJson">Download Docs MCP session (.json)</button>
+    </div>
+    <div id="mcpBody"></div>
   </section>
 
   <section class="panel" id="panel-journey" role="tabpanel" aria-labelledby="tab-journey" hidden>

@@ -5,3 +5,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# local tooling, not part of the project
+.idea/
+skills/

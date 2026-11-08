@@ -2,7 +2,7 @@
   "name": "docs-mcp-onboarding",
   "version": "1.0.0",
   "type": "module",
-  "description": "Audits the Pharos documentation as a first-time developer: eight onboarding steps, each checked against the corpus, with the evidence for every verdict.",
+  "description": "Onboards onto Pharos using only the Developer Docs MCP, logs every query and answer, and cross-checks the gaps against a pinned docs snapshot.",
   "engines": {
     "node": ">=20"
   },
@@ -10,11 +10,14 @@
     "build:index": "node scripts/build-index.mjs",
     "audit": "node scripts/audit.mjs",
     "audit:live": "node scripts/audit.mjs --live",
-    "test": "node test/offline.test.mjs && node test/claims.test.mjs && node test/api.test.mjs",
+    "test": "node test/offline.test.mjs && node test/claims.test.mjs && node test/api.test.mjs && node scripts/mcp-session.mjs --check",
     "verify:claims": "node scripts/verify-claims.mjs",
     "test:live": "node test/live.test.mjs",
     "serve": "npx --yes wrangler pages dev public --port 8793 --ip 127.0.0.1",
-    "deploy": "npx --yes wrangler pages deploy public"
+    "deploy": "npx --yes wrangler pages deploy public",
+    "mcp:session": "node scripts/mcp-session.mjs",
+    "mcp:render": "node scripts/mcp-session.mjs --render",
+    "mcp:check": "node scripts/mcp-session.mjs --check"
   },
   "keywords": [
     "pharos",
@@ -28,6 +31,9 @@
     "scripts",
     "functions",
     "public",
+    "data",
+    "docs",
+    "reports",
     "SKILL.md",
     "README.md",
     "LICENSE",

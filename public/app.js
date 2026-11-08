@@ -9,6 +9,7 @@
 // specific bug this design exists to prevent.
 
 import { AUDIT } from "./audit.generated.js";
+import { MCP_SESSION } from "./mcp-session.generated.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -236,10 +237,101 @@ function renderRubric(a) {
   );
 }
 
+function renderMcpSession(mcp) {
+  const body = $("mcpBody");
+  if (!mcp || !Array.isArray(mcp.steps) || !mcp.steps.length) {
+    body.replaceChildren(
+      el("div", { class: "notice notice-error" }, [
+        el("strong", { text: "No Docs MCP session artifact. " }),
+        "Run `npm run mcp:render` and reload.",
+      ]),
+    );
+    return;
+  }
+
+  $("countMcp").textContent = String(mcp.steps.length);
+  const sum = mcp.summary || {};
+
+  const metaBox = el("div", { class: "notice notice-info" }, [
+    el("strong", {
+      text: `${sum.totalSteps} steps · ${sum.resolved} answered · ${sum.gaps} gaps · ${sum.totalCalls} Docs MCP calls (${sum.failedCalls} failed, ${sum.totalSeconds}s). `,
+    }),
+    `Server: ${mcp.endpoint} (${mcp.server?.title || "Docs MCP"} v${mcp.server?.version || "?"}, protocol ${mcp.protocolVersion}). Tools used: ${(mcp.toolsUsed || []).join(", ")}.`,
+  ]);
+
+  const stepCards = mcp.steps.map((s) => {
+    const callItems = (s.calls || []).map((c) =>
+      el("li", {}, [
+        el("div", { class: "mcp-call-head" }, [
+          el("code", { class: "result-id", text: `${c.tool} ${JSON.stringify(c.args)}` }),
+          el("span", { class: "note", text: `${(c.ms / 1000).toFixed(1)}s${c.sourceCount ? ` · ${c.sourceCount} cited sources` : ""}` }),
+        ]),
+        c.ok
+          ? el("blockquote", { text: c.excerpt })
+          : el("blockquote", { text: `Call failed: ${c.error}` }),
+      ]),
+    );
+
+    return el("article", { class: "detail", id: `mcp-step-${s.id}` }, [
+      el("div", { class: "result-head" }, [
+        el("h3", { text: `Step ${s.n} — ${s.title}` }),
+        statusChip(s),
+      ]),
+      el("div", { class: "meta", text: `Docs MCP session · ${s.calls.length} call${s.calls.length === 1 ? "" : "s"}` }),
+      el("dl", { class: "field" }, [
+        el("dt", { text: "Trying to" }),
+        el("dd", { text: s.goal }),
+      ]),
+      el("dl", { class: "field" }, [
+        el("dt", { text: "Queries & verbatim Docs MCP responses" }),
+        el("dd", {}, [el("ul", { class: "evidence" }, callItems)]),
+      ]),
+      el("dl", { class: "field" }, [
+        el("dt", { text: s.status === "GAP" ? "What broke" : "Verdict" }),
+        el("dd", { text: s.rule }),
+      ]),
+      s.fix
+        ? el("dl", { class: "field" }, [
+            el("dt", { text: "What the docs should say (suggested fix)" }),
+            el("dd", { class: "rec", text: s.fix }),
+          ])
+        : null,
+    ]);
+  });
+
+  const outcome = mcp.outcome || {};
+  const outcomeSection = el("article", { class: "detail" }, [
+    el("h3", { text: "What I managed to build or run by the end" }),
+    el("div", { class: "meta", text: "Task deliverable · end-of-session summary" }),
+    el("dl", { class: "field" }, [
+      el("dt", { text: "Ran" }),
+      el("dd", {}, [
+        el("ul", { class: "mcp-list" }, (outcome.ran || []).map((item) => el("li", { text: item }))),
+      ]),
+    ]),
+    el("dl", { class: "field" }, [
+      el("dt", { text: "Did not get to" }),
+      el("dd", {}, [
+        el("ul", { class: "mcp-list" }, (outcome.didNotGetTo || []).map((item) => el("li", { text: item }))),
+      ]),
+    ]),
+    el("dl", { class: "field" }, [
+      el("dt", { text: "Built" }),
+      el("dd", {}, [
+        el("ul", { class: "mcp-list" }, (outcome.built || []).map((item) => el("li", { text: item }))),
+      ]),
+    ]),
+  ]);
+
+  body.replaceChildren(metaBox, ...stepCards, outcomeSection);
+}
+
 // -------------------------------------------------------------------- tabs
 
+const TAB_KEYS = ["gaps", "mcp", "journey", "search"];
+
 function switchTab(name) {
-  for (const key of ["gaps", "journey", "search"]) {
+  for (const key of TAB_KEYS) {
     const tab = $(`tab-${key}`);
     const panel = $(`panel-${key}`);
     const on = key === name;
@@ -248,7 +340,7 @@ function switchTab(name) {
   }
 }
 
-for (const key of ["gaps", "journey", "search"]) {
+for (const key of TAB_KEYS) {
   $(`tab-${key}`).addEventListener("click", () => switchTab(key));
 }
 
@@ -364,6 +456,17 @@ function wireExports(a) {
   $("btnJson").addEventListener("click", () => {
     download("pharos-docs-gap-audit.json", "application/json", JSON.stringify(a, null, 2));
   });
+  $("btnMcpMd").addEventListener("click", () => {
+    if (MCP_SESSION?.markdown) {
+      download("docs-mcp-session-log.md", "text/markdown", MCP_SESSION.markdown);
+    }
+  });
+  $("btnMcpJson").addEventListener("click", () => {
+    if (MCP_SESSION) {
+      const { markdown: _m, ...rest } = MCP_SESSION;
+      download("docs-mcp-session.json", "application/json", JSON.stringify(rest, null, 2));
+    }
+  });
 }
 
 // -------------------------------------------------------------------- boot
@@ -376,7 +479,7 @@ function fatal(err) {
       `${err.message}. Run \`npm run audit -- --live\` and reload. Nothing is displayed rather than showing numbers this page cannot source.`,
     ]),
   );
-  for (const id of ["panel-gaps", "panel-journey", "panel-search"]) $(id).hidden = true;
+  for (const id of ["panel-gaps", "panel-mcp", "panel-journey", "panel-search"]) $(id).hidden = true;
 }
 
 try {
@@ -384,6 +487,7 @@ try {
   renderHeader(audit);
   renderSummary(audit);
   renderGaps(audit);
+  renderMcpSession(MCP_SESSION);
   renderJourney(audit);
   renderRubric(audit);
   wireExports(audit);

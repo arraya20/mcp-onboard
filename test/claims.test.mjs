@@ -47,7 +47,7 @@ await test("every count in the report reproduces from the corpus", () => {
   assert.ok(rows.length >= 10, "the recount covers too few claims to be useful");
 });
 
-await test("every count is declared literal and case-sensitive", () => {
+await test("every count is declared literal and case-insensitive", () => {
   assert.match(report, /literal, case-insensitive substring occurrences/);
   // The rule has to be the same one the search endpoint applies, or the report
   // and the search box print two different counts for one question.
@@ -75,9 +75,13 @@ await test("a subpage count is never larger than the list beside it", () => {
 
 process.stdout.write("\nreport integrity\n");
 
-await test("the report does not re-assert the Docs MCP premise", () => {
+await test("the report does not claim the Pharos Docs MCP is missing", () => {
   assert.doesNotMatch(report.split("\n")[0], /Docs MCP/i);
-  assert.match(report, /No documentation MCP server exists for Pharos/);
+  // A Docs MCP exists at docs.pharos.xyz/~gitbook/mcp; asserting otherwise was a
+  // factual error that an earlier version of this test locked in.
+  assert.doesNotMatch(report, /No documentation MCP server exists/i);
+  assert.match(report, /~gitbook\/mcp/);
+  assert.match(report, /docs\/mcp-session-log\.md/);
 });
 
 await test("no ungrammatical pluralisation leaks into the report", () => {

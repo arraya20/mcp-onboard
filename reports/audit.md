@@ -1,7 +1,7 @@
 # Pharos documentation — first-time developer gap audit
 
-Task `docs-mcp-onboarding`. No documentation MCP server exists for Pharos: `mcp.pharos.xyz` is a chain JSON-RPC server. The audit therefore runs against the documentation corpus itself — **74 pages** of `https://docs.pharos.xyz` (corpus hash `58685967c38888c4`).
-Live checks were run against the chain and the MCP server at 2026-11-04T16:31:53.414Z.
+Task `docs-mcp-onboarding`. The first-hand onboarding through the Pharos Developer Docs MCP (`docs.pharos.xyz/~gitbook/mcp`) is logged in `docs/mcp-session-log.md`. This report is its cross-check: the same journey, recounted offline over a pinned snapshot of **74 pages** of `https://docs.pharos.xyz` (corpus hash `58685967c38888c4`).
+Live checks were run against the chain and the MCP server at 2026-11-07T04:39:02.983Z.
 
 All counts below are literal, case-insensitive substring occurrences over the pinned corpus — the same rule the search box uses, so every number here can be reproduced by typing the query. No stemming, no synonyms, no fuzzy matching.
 
