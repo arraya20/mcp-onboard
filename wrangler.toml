@@ -4,6 +4,6 @@
 # compatibility_date is pinned rather than left to wrangler's default, which
 # changes over time and prints a warning on every run. Workers runtime behaviour
 # is versioned by this date, so pinning it makes the deploy reproducible.
-name = "pharos-docs-gap-audit"
+name = "pharos-mcp-onboard"
 compatibility_date = "2026-11-04"
 pages_build_output_dir = "public"

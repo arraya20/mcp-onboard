@@ -440,21 +440,21 @@ function wireExports(a) {
     // The markdown lives in the artifact only when the generator kept it; when
     // the snapshot was slimmed, fetch the full report from the API instead of
     // reconstructing prose in the browser.
-    if (a.markdown) return download("pharos-docs-gap-audit.md", "text/markdown", a.markdown);
+    if (a.markdown) return download("pharos-mcp-onboard.md", "text/markdown", a.markdown);
     try {
       const res = await fetch("/api/report?format=md");
       if (!res.ok) throw new Error(`API responded ${res.status}`);
-      download("pharos-docs-gap-audit.md", "text/markdown", await res.text());
+      download("pharos-mcp-onboard.md", "text/markdown", await res.text());
     } catch (err) {
       download(
-        "pharos-docs-gap-audit.md",
+        "pharos-mcp-onboard.md",
         "text/markdown",
         `# report unavailable\n\n${err.message}\n\nThe structured snapshot is still downloadable as JSON.\n`,
       );
     }
   });
   $("btnJson").addEventListener("click", () => {
-    download("pharos-docs-gap-audit.json", "application/json", JSON.stringify(a, null, 2));
+    download("pharos-mcp-onboard.json", "application/json", JSON.stringify(a, null, 2));
   });
   $("btnMcpMd").addEventListener("click", () => {
     if (MCP_SESSION?.markdown) {

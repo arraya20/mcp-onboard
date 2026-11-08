@@ -84,7 +84,7 @@ async function fetchStatus(url) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(url, { redirect: "follow", signal: ctrl.signal, headers: { "user-agent": "pharos-docs-gap-auditor/1.0" } });
+    const res = await fetch(url, { redirect: "follow", signal: ctrl.signal, headers: { "user-agent": "pharos-mcp-onboard/1.0" } });
     return { url, ok: res.ok, status: res.status };
   } catch (err) {
     return { url, ok: false, error: describeFetchError(err) };
@@ -184,7 +184,7 @@ async function mcpSnapshot(documentedTools) {
       params: {
         protocolVersion: "2025-06-18",
         capabilities: {},
-        clientInfo: { name: "pharos-docs-gap-auditor", version: "1.0" },
+        clientInfo: { name: "pharos-mcp-onboard", version: "1.0" },
       },
     });
     const sid = init.sid;
